@@ -1,0 +1,43 @@
+name: Publish
+
+# Publishes to PyPI via Trusted Publishing (OIDC) on a v* tag. No API token is
+# stored; configure the trusted publisher for `extract-cli` on PyPI and a
+# GitHub Environment named `pypi`.
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -e ".[dev]"
+      - name: Verify before publishing
+        run: |
+          python -m mypy --strict extract_cli.py
+          python -m pytest -q
+          make spec-check
+      - run: python -m build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # required for Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
