@@ -22,7 +22,7 @@ def test_version(capsys: pytest.CaptureFixture[str]) -> None:
     with pytest.raises(SystemExit) as exc:
         ex.main(["--version"])
     assert exc.value.code == 0
-    assert "extract-cli 0.1.0" in capsys.readouterr().out
+    assert f"extract-cli {ex.__version__}" in capsys.readouterr().out
 
 
 def test_demo_runs(capsys: pytest.CaptureFixture[str]) -> None:

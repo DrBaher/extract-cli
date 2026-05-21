@@ -48,7 +48,7 @@
     "source": "none"
   },
   "_meta": {
-    "extractor_version": "0.1.0",
+    "extractor_version": "0.1.1",
     "tiers_used": [
       "deterministic"
     ],

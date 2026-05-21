@@ -6,6 +6,31 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.1] - 2026-05-21
+
+Real-world hardening, driven by testing against a SEC EDGAR employment
+agreement and the Common Paper Mutual NDA (PDF/DOCX).
+
+### Added
+- **`numbered` clause-detection tier** for plain numbered headings
+  (`1. Termination`, `Section 3. Payment`, `Article IV. …`) — the dominant
+  format in foreign paper, missed by the H2/bold/ALL-CAPS tiers. A title-case
+  heuristic rejects numbered sentences and list items. The output schema's
+  clause `tier` enum gains `numbered` (a backward-compatible widening).
+
+### Fixed
+- **PDF reader** now extracts text only from inside `BT … ET` text objects, so
+  embedded fonts, digital-signature blobs, and metadata streams no longer leak
+  binary noise (a real signed PDF dropped from ~188 KB of garbage to ~8.7 KB of
+  clean text). Added a printable-ratio backstop.
+- **Effective date**: anchor on `(the "Effective Date")` and a bare
+  `as of <date>` cue; handle dates that wrap across a line break.
+- **Term length**: require a real number, dropping false positives such as
+  `…consecutive days`.
+- **Title**: skip SGML/XML wrapper lines (e.g. SEC EDGAR `<DOCUMENT>` headers).
+- Strip trailing punctuation from clause titles (`Other Benefits.` →
+  `Other Benefits`).
+
 ## [0.1.0] - 2026-05-21
 
 Initial release — the open-loop front door of the contract-ops CLI suite.
@@ -57,4 +82,5 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.1]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.0
