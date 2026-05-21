@@ -1,0 +1,7 @@
+{
+  "_comment": "Copy to ~/.config/contract-ops/llm.json (suite-wide, preferred) or ./config/llm.json (repo-local). Shared with the rest of the contract-ops suite. Only read when you pass --llm.",
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-6",
+  "api_key": "sk-ant-REPLACE_ME",
+  "base_url": "https://api.openai.com/v1"
+}

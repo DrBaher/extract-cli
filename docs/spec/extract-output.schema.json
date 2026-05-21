@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/DrBaher/extract-cli/blob/main/docs/spec/extract-output.schema.json",
+  "title": "extract-cli output schema (v1)",
+  "description": "Structured payload emitted by `extract <path>` (default JSON output). The cross-CLI contract that nda-review-cli, compare-cli and contract-vault consume. Every extracted field carries a confidence and a source in {deterministic, llm, none}: downstream treats fields as 'verify, not trust'. Note: the --no-confidence view is a reduced convenience projection NOT governed by this schema.",
+  "type": "object",
+  "required": [
+    "document",
+    "parties",
+    "dates",
+    "term",
+    "governing_law",
+    "clauses",
+    "defined_terms",
+    "value",
+    "_meta"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "source": {
+      "enum": [
+        "deterministic",
+        "llm",
+        "none"
+      ]
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "value",
+        "confidence",
+        "source"
+      ],
+      "properties": {
+        "value": {},
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "properties": {
+    "document": {
+      "type": "object",
+      "required": [
+        "title",
+        "format",
+        "sha256",
+        "source_path"
+      ],
+      "properties": {
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "format": {
+          "enum": [
+            "markdown",
+            "text",
+            "docx",
+            "pdf"
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "parties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "confidence",
+          "source"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "dates": {
+      "type": "object",
+      "required": [
+        "effective",
+        "expiration"
+      ],
+      "properties": {
+        "effective": {
+          "$ref": "#/$defs/field"
+        },
+        "expiration": {
+          "$ref": "#/$defs/field"
+        }
+      },
+      "additionalProperties": false
+    },
+    "term": {
+      "type": "object",
+      "required": [
+        "length",
+        "auto_renew",
+        "notice_period_days"
+      ],
+      "properties": {
+        "length": {
+          "$ref": "#/$defs/field"
+        },
+        "auto_renew": {
+          "$ref": "#/$defs/field"
+        },
+        "notice_period_days": {
+          "$ref": "#/$defs/field"
+        },
+        "renewal_mechanics": {
+          "$ref": "#/$defs/field"
+        }
+      },
+      "additionalProperties": false
+    },
+    "governing_law": {
+      "$ref": "#/$defs/field"
+    },
+    "clauses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "canonical_title",
+          "detected_title",
+          "tier",
+          "span",
+          "confidence",
+          "source",
+          "mapped"
+        ],
+        "properties": {
+          "canonical_title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "detected_title": {
+            "type": "string"
+          },
+          "tier": {
+            "enum": [
+              "h2",
+              "bold-numbered",
+              "all-caps",
+              "explicit",
+              "llm"
+            ]
+          },
+          "span": {
+            "type": "object",
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          },
+          "mapped": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "defined_terms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "term",
+          "confidence",
+          "source"
+        ],
+        "properties": {
+          "term": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "value": {
+      "$ref": "#/$defs/field"
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "text",
+          "confidence",
+          "source"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "_meta": {
+      "type": "object",
+      "required": [
+        "extractor_version",
+        "tiers_used",
+        "llm_used"
+      ],
+      "properties": {
+        "extractor_version": {
+          "type": "string"
+        },
+        "tiers_used": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "deterministic",
+              "llm"
+            ]
+          }
+        },
+        "llm_used": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
