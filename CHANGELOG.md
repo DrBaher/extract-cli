@@ -6,6 +6,23 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.6] - 2026-05-21
+
+### Docs
+- **Rewrote the README composability section to verified, runnable examples.**
+  Testing extract-cli against the real sibling CLIs (`template-vault-cli`,
+  `nda-review-cli`) showed the previous pipes were aspirational — the siblings
+  expose no `--from-extract`/`--stdin` flag (`nda-review review` takes
+  `--file`/`--text`; `template-vault` reads its own vault). The integration
+  contract is the **output schema + the shared canonical clause vocabulary**,
+  glued by stdout JSON and standard tools (`jq`, `comm`): `extract`'s
+  `canonical_title` values are the same names template-vault detects and
+  nda-review keys policy on, so a foreign document's clauses line up with the
+  suite's with no bespoke adapter. New examples cover clause-coverage gap
+  analysis against a vault template and a combined extract+nda-review intake
+  report — all runnable today. (Also fixed a broken `jq input_filename` in the
+  folder-triage example.) No code or schema change.
+
 ## [0.1.5] - 2026-05-21
 
 ### Added
@@ -181,6 +198,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.6]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.6
 [0.1.5]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.5
 [0.1.4]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.4
 [0.1.3]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.3

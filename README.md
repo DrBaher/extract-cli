@@ -133,37 +133,48 @@ extract counterparty.pdf | jq '.clauses[] | {canonical_title, detected_title, ma
 
 ## Composability — piping into the rest of the suite
 
-`extract-cli` is built to be the first stage of a Unix pipe. Its JSON is the
-contract every downstream tool reads.
+`extract-cli` is built to be the first stage of a Unix pipe. The glue is its
+**stdout JSON + standard tools** (`jq`, `comm`) and the **shared clause
+vocabulary** — `extract`'s `canonical_title` values are the same names
+`template-vault-cli` detects and `nda-review-cli` keys policy on, so a foreign
+document's clauses line up with the suite's with no bespoke adapter. Every
+example below is runnable today (verified against the real sibling CLIs).
 
 ```bash
-# 1) Foreign NDA → review. extract normalizes clauses; nda-review runs policy.
-extract counterparty_nda.pdf | nda-review review --from-extract -
+# 1) Inspect any contract's structure (.md/.txt/.html/.docx/.pdf, one tool).
+extract counterparty.docx | jq '{parties: [.parties[].name],
+  governing_law: .governing_law.value, clauses: [.clauses[].canonical_title]}'
 
-# 2) Pull just the clause map and feed compare-cli to diff a foreign doc
-#    against your canonical template's structure.
-extract their_msa.docx --fields clauses | compare-cli align --stdin \
-  --against msa/standard
+# 2) Clause-coverage gap vs your canonical template in template-vault-cli.
+#    extract normalizes the counterparty's *foreign* headings onto the same
+#    clause vocabulary template-vault detects, so a plain `comm` diffs them.
+template-vault info nda/mutual-standard --json | jq -r '.clauses[].title' | sort > ours.txt
+extract counterparty_nda.docx | jq -r '.clauses[].canonical_title' | sort -u > theirs.txt
+comm -23 ours.txt theirs.txt    # clauses in OUR standard that THEY are missing
+comm -13 ours.txt theirs.txt    # clauses THEY added that we don't have
 
-# 3) Archive structured metadata for any inbound paper into the post-signature
-#    vault, keyed by content hash.
-extract signed_contract.pdf | contract-vault put --from-extract - \
-  --id "$(extract signed_contract.pdf | jq -r .document.sha256)"
+# 3) Intake: extract for structure, nda-review-cli for a policy verdict on the
+#    same foreign doc; merge both views with jq.
+extract counterparty_nda.docx > extract.json
+nda-review review --file counterparty_nda.docx --playbook output/nda_playbook.json \
+  --out-json review.json
+jq -n --slurpfile e extract.json --slurpfile r review.json \
+  '{parties: [$e[0].parties[].name], governing_law: $e[0].governing_law.value,
+    clauses: ($e[0].clauses | length), decision: $r[0].decision, risk: $r[0].risk_score}'
 
-# 4) Triage a folder of inbound contracts: list governing law + parties.
-for f in inbox/*.pdf; do
+# 4) Triage a folder of inbound contracts: governing law + parties per file.
+for f in inbox/*; do
   extract "$f" --fields parties,governing_law --no-confidence \
-    | jq -c '{file: input_filename, gov: .governing_law, parties: [.parties[].name]}'
+    | jq -c --arg f "$f" '{file: $f, gov: .governing_law, parties: [.parties[].name]}'
 done
 
-# 5) Gate a workflow on extraction confidence.
+# 5) Gate a workflow on extraction confidence (non-zero exit if any clause is shaky).
 extract draft.docx | jq -e '.clauses | all(.confidence > 0.7)' && echo "ok to review"
 ```
 
-> The `--from-extract`/`--stdin` flags above are the consumption points the
-> sibling CLIs expose (or are adopting) for this contract; see
-> [`docs/INTEROP.md`](docs/INTEROP.md) for the shared conventions and the
-> versioning commitment on the schema.
+> The integration contract is the **output schema** and the **canonical clause
+> vocabulary**, not per-tool flags. See [`docs/INTEROP.md`](docs/INTEROP.md) for
+> the shared conventions and the schema's versioning commitment.
 
 ## LLM configuration (opt-in)
 
