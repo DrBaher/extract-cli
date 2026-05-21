@@ -629,18 +629,25 @@ _PARTY_CUT_MARKERS: Tuple[str, ...] = (
     r"\s+organized\b",
     r"\s+incorporated\b",
     r"\s+whose\b",
+    r"\s+together\b",
+    r",\s+as\s+\w",                                   # ", as administrative agent"
     r"\s+(?:as\s+of|dated|effective)\b",
 )
 
 
 def _clean_party_name(s: str) -> str:
     """Trim a captured party name down to the entity name, dropping trailing
-    descriptors ('a Delaware corporation', 'd/b/a ...', 'as of ...')."""
+    descriptors ('a Delaware corporation', 'd/b/a ...', 'together with ...',
+    'as of ...') and any dangling unclosed parenthetical ('(each of them ...')."""
     s = re.sub(r"\s+", " ", s).strip().strip(",").strip()
     for pat in _PARTY_CUT_MARKERS:
         m = re.search(pat, s, re.IGNORECASE)
         if m:
             s = s[: m.start()].strip().strip(",").strip()
+    # Drop a trailing parenthetical that was opened but never closed (the close
+    # fell outside the captured span), e.g. "Glenn Rufrano (each of them being".
+    if "(" in s and ")" not in s:
+        s = s[: s.index("(")].strip().strip(",").strip()
     return s.strip("\"“”").strip()
 
 
@@ -741,9 +748,45 @@ def extract_defined_terms(text: str) -> List[JSON]:
     return [{"term": t, "confidence": 0.6, "source": "deterministic"} for t in seen]
 
 
+# Detected-heading titles that are almost never real clauses: front/back-matter,
+# page/document codes, exhibit & schedule references.
+_NOISE_TITLE_PREFIX_RE = re.compile(
+    r"^(?:table\s+of\s+contents|exhibit|schedule|annex|appendix|attachment|"
+    r"signature\s+page|page)\b",
+    re.IGNORECASE,
+)
+
+
+def _is_noise_clause_title(title: str) -> bool:
+    """True for detected 'headings' that are structural noise rather than
+    clauses -- document codes/page numbers (4+ consecutive digits, e.g.
+    'Ks 112708-2'), and front/back-matter like 'Table of Contents' or
+    'Exhibit B'. Safe filters only; kept conservative to avoid dropping real
+    clauses."""
+    t = title.strip()
+    if re.search(r"\d{4,}", t):
+        return True
+    if _NOISE_TITLE_PREFIX_RE.match(t):
+        return True
+    return False
+
+
 def extract_clauses(text: str) -> List[JSON]:
+    detected = detect_clauses(text)
+    # A heading whose title repeats 3+ times across the document is almost
+    # always a running header/footer (e.g. a page code), not that many distinct
+    # clauses -- drop every occurrence. (Counted on the normalized title.)
+    counts: Dict[str, int] = {}
+    for c in detected:
+        k = _norm_clause_key(c["title"])
+        counts[k] = counts.get(k, 0) + 1
+
     out: List[JSON] = []
-    for c in detect_clauses(text):
+    for c in detected:
+        if counts[_norm_clause_key(c["title"])] >= 3:
+            continue
+        if _is_noise_clause_title(c["title"]):
+            continue
         canonical, mapped = _canonicalize_clause(c["title"])
         tier = c["tier"]
         base = {"h2": 0.95, "bold-numbered": 0.85, "numbered": 0.8,

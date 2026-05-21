@@ -6,6 +6,31 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.3] - 2026-05-21
+
+Clause-map de-noising and party cleanup, driven by testing against 10 more
+contracts (SEC EDGAR credit, loan, employment, lease, asset-purchase, and
+consulting HTML exhibits; Apache PDFs).
+
+### Fixed
+- **Clause map drops structural noise** common in dense real documents:
+  a heading whose title repeats 3+ times is treated as a running header/footer
+  (one lease's `Ks 112708-2` page code went from 44 "clauses" to 0), and
+  front/back-matter (`Table of Contents`, `Exhibit B`, `Schedule 2.1`) and
+  document codes/page numbers (4+ consecutive digits) are filtered out.
+- **Party-name cleanup** extended: trailing `together with …`, `, as
+  administrative agent`, and a dangling unclosed parenthetical
+  (`(each of them being`) are trimmed.
+
+### Notes
+- On dense documents the deterministic clause map can still surface a few
+  non-clause headings (e.g. address lines in a notices block); consumers
+  wanting only suite-vocabulary clauses should filter on `mapped == true`,
+  which isolates the real clauses (the noise is always `mapped == false`).
+- Known best-effort edge cases on varied real paper: a bare role word as a
+  party name ("Landlord"), and a middle-initial period truncating a personal
+  name ("John C." → "John C"). Best-effort fields carry confidence/source.
+
 ## [0.1.2] - 2026-05-21
 
 More real-world hardening, driven by testing against five additional contracts
@@ -115,6 +140,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.3]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.3
 [0.1.2]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.2
 [0.1.1]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.0

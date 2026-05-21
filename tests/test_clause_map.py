@@ -69,6 +69,31 @@ def test_trailing_period_stripped_from_titles() -> None:
     assert ex._canonicalize_clause("Survival.") == ("Survival", True)
 
 
+def test_repeated_heading_treated_as_boilerplate() -> None:
+    # A "heading" that repeats 3+ times is a running header/footer, not clauses.
+    body = "\n\n".join("## Ks 99-2\n\nfoo" for _ in range(4))
+    text = "## Confidentiality\n\nreal body\n\n" + body
+    clauses = ex.extract_clauses(text)
+    titles = [c["canonical_title"] for c in clauses]
+    assert "Confidentiality" in titles
+    assert not any("Ks" in (t or "") for t in titles)
+
+
+def test_noise_clause_titles_filtered() -> None:
+    assert ex._is_noise_clause_title("Ks 112708-2")       # 4+ digit code
+    assert ex._is_noise_clause_title("Table of Contents")
+    assert ex._is_noise_clause_title("Exhibit B")
+    assert ex._is_noise_clause_title("Schedule 2.1")
+    assert not ex._is_noise_clause_title("Confidentiality")
+    assert not ex._is_noise_clause_title("Term and Termination")
+
+
+def test_party_cuts_together_as_agent_and_unclosed_paren() -> None:
+    assert ex._clean_party_name("Foo LLC, together with its affiliates") == "Foo LLC"
+    assert ex._clean_party_name("GE Capital Corporation, as administrative agent") == "GE Capital Corporation"
+    assert ex._clean_party_name("Glenn Rufrano (each of them being") == "Glenn Rufrano"
+
+
 def test_cascade_priority_h2_wins() -> None:
     # An H2 present means the bold/all-caps fallbacks must not fire.
     text = "## Real Heading\n\n**1. Not A Heading**\n\nALSO NOT A HEADING\n\nbody"
