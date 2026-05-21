@@ -1,0 +1,1710 @@
+#!/usr/bin/env python3
+"""extract-cli -- the open-loop front door of the contract-ops CLI suite.
+
+The suite is a contract lifecycle (store -> draft -> review -> diff -> convert
+-> sign) that, until now, only handled documents it authored from its own
+templates. `extract-cli` is "passport control": it ingests ANY document --
+yours or a counterparty's foreign paper -- in .md/.txt (natively), .docx, or
+.pdf, and emits a structured JSON representation that the rest of the suite
+(nda-review-cli, compare-cli, contract-vault) consumes.
+
+Two extraction tiers:
+  * DETERMINISTIC (default, always on): parties, dates, defined-term inventory,
+    the CLAUSE MAP, governing law, best-effort term/notice/value. Pure
+    regex/structure -- no network, no LLM.
+  * LLM (opt-in via --llm only): the fuzzy fields (renewal mechanics,
+    obligation phrasing, ambiguous governing law). Always skippable; the
+    deterministic core is fully useful without it.
+
+Every extracted field carries a `confidence` and a `source` in
+{deterministic, llm, none} -- downstream tools treat fields as "verify, not
+trust".
+
+Stdlib-only. Single file. The clause-detection cascade (H2 -> bold-numbered ->
+ALL-CAPS) and the canonical-vocabulary alias normalization are ported from
+template-vault-cli so a foreign document's clauses land on the suite's shared
+clause vocabulary.
+
+Part of the contract-ops CLI suite. See docs/INTEROP.md.
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import hashlib
+import importlib.util
+import json
+import os
+import re
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
+__version__ = "0.1.0"
+
+# Bumped independently of the package version when the *extraction logic*
+# changes in a way downstream consumers should notice. Embedded in `_meta`.
+EXTRACTOR_VERSION = "0.1.0"
+
+# JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
+SCHEMA_VERSION = 1
+
+JSON = Dict[str, Any]
+
+CLI_NAME = "extract-cli"
+
+# ---------------------------------------------------------------------------
+# Streams / color (convention-shared with the suite; see docs/INTEROP.md)
+# ---------------------------------------------------------------------------
+
+
+def _color_enabled(stream: Any = None) -> bool:
+    """Auto-detect color support: opt out via NO_COLOR (https://no-color.org/),
+    force on via FORCE_COLOR, otherwise only when the stream is a tty."""
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    s = stream if stream is not None else sys.stdout
+    try:
+        return bool(s.isatty())
+    except Exception:
+        return False
+
+
+def _c(text: str, code: str) -> str:
+    if not _color_enabled():
+        return text
+    return f"\033[{code}m{text}\033[0m"
+
+
+def _green(s: str) -> str:
+    return _c(s, "32")
+
+
+def _yellow(s: str) -> str:
+    return _c(s, "33")
+
+
+def _red(s: str) -> str:
+    return _c(s, "31")
+
+
+def _bold(s: str) -> str:
+    return _c(s, "1")
+
+
+def _dim(s: str) -> str:
+    return _c(s, "2")
+
+
+def _eprint(*args: Any, **kwargs: Any) -> None:
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def _why_print(args_ns: argparse.Namespace, header: str, *lines: str) -> None:
+    """Emit a `--why` block to **stderr** so it never pollutes piped stdout.
+    No-op unless `--why` was passed. Plain-text envelope (matches this repo's
+    siblings template-vault-cli / draft-cli)."""
+    if not getattr(args_ns, "why", False):
+        return
+    _eprint(f"\n[why] {header}")
+    for line in lines:
+        _eprint(f"  {line}")
+
+
+def _warn(args_ns: Optional[argparse.Namespace], msg: str) -> None:
+    """Diagnostic to stderr, suppressed by -q/--silent."""
+    if args_ns is not None and getattr(args_ns, "silent", False):
+        return
+    _eprint(_yellow("warning:") + f" {msg}")
+
+
+# ---------------------------------------------------------------------------
+# Errors
+# ---------------------------------------------------------------------------
+
+
+class ExtractError(Exception):
+    """User-actionable error. main() prints it and exits non-zero."""
+
+
+# ---------------------------------------------------------------------------
+# Clause-detection cascade  (ported from template-vault-cli `template_vault_cli.py`)
+#
+# Tier 1: H2 headings (`## Title`)            -- Markdown-native templates.
+# Tier 2: bold-numbered (`**1. Purpose**`)    -- typical of DOCX -> text.
+# Tier 3: ALL-CAPS standalone lines           -- typical of legal PDFs.
+# The fallback tiers only run when the prior tier finds nothing, so they can't
+# shadow real structure. Foreign clauses are then normalized onto the suite's
+# canonical vocabulary via the alias index below.
+# ---------------------------------------------------------------------------
+
+# Auto-detect clause headers by H2 only (not H3+). Anchored at line start.
+H2_RE = re.compile(r"^##[ \t]+(.+?)[ \t]*$", re.MULTILINE)
+
+# Bold-numbered:  **1. Purpose**  /  **Section 4. Term**  /  **(1) Scope**
+_BOLD_HEADING_RE = re.compile(
+    r"^\*\*\s*"
+    r"(?:"
+    r"(?:Article|Section|Sec\.?|Art\.?|Clause|Part|§)\s+\S+\.?"  # word-prefixed
+    r"|"
+    r"\(\d+\)"  # (1)
+    r"|"
+    r"\d+(?:\.\d+)*"  # 1 / 1.2.3
+    r")"
+    r"[\.\):\s]+"
+    r"([^\*\n]+?)"
+    r"\s*\*\*\s*$",
+    re.MULTILINE,
+)
+
+# ALL-CAPS standalone heading: blank-line framed on both sides (so inline
+# shouts in prose don't qualify); doesn't start with `[` (so `[BRACKETED]`
+# placeholders never match). Single-token lines need >= 4 ASCII letters
+# (enforced in _qualifies_as_all_caps_heading).
+_ALL_CAPS_HEADING_RE = re.compile(
+    r"(?:^|\n)\n([A-Z][A-Z0-9 \-/&,]{1,}[A-Z0-9])\s*\n\n",
+)
+
+# Roman numerals 1-39 -- covers virtually all legal-document section numbering.
+# Longer alternatives come first within each group so the regex engine doesn't
+# short-circuit on a prefix match (bare V / X must still match).
+_ROMAN_RE = (
+    r"(?:(?:XXX|XX|X)(?:IX|IV|VIII|VII|VI|V|III|II|I)?"
+    r"|IX|IV|VIII|VII|VI|V|III|II|I)"
+)
+
+# Leading numbering tokens to strip from a clause title. Order matters: longer
+# Article/Section forms come before bare numbers so they're consumed first.
+_NUMBER_PREFIX_RE = re.compile(
+    r"^\s*(?:"
+    r"(?:Article|Section|Sec\.?|Art\.?|Clause|Part)\s+"
+    r"(?:" + _ROMAN_RE + r"|\d+(?:\.\d+)*)"
+    r"|"
+    r"§\s*\d+(?:\.\d+)*"
+    r"|"
+    r"\(\d+\)"
+    r"|"
+    r"\[\d+\]"
+    r"|"
+    r"\d+(?:\.\d+)+"
+    r"|"
+    r"\d+"
+    r")"
+    r"[\.\)\]:\s]*",
+    re.IGNORECASE,
+)
+
+
+def _strip_clause_number(s: str) -> str:
+    """Remove a leading numbering token (`1.`, `1)`, `(1)`, `[1]`, `1.2.3`,
+    `Article I.`, `Section 4.`, `§ 4.2`). Idempotent."""
+    return _NUMBER_PREFIX_RE.sub("", s, count=1).strip()
+
+
+def _qualifies_as_all_caps_heading(title: str) -> bool:
+    """Single-token ALL-CAPS lines need >= 4 ASCII letters (so 'TER' doesn't
+    qualify but 'TERM' does). Multi-token lines pass through."""
+    tokens = title.split()
+    if len(tokens) >= 2:
+        return True
+    return sum(1 for ch in title if "A" <= ch <= "Z") >= 4
+
+
+def detect_clauses(text: str) -> List[JSON]:
+    """Run the three-tier cascade and return clauses with their detection tier.
+
+    Returns [{title, detected, anchor, start, end, tier}, ...]. `title` is the
+    numbering-stripped heading; `detected` is the raw heading line as it
+    appeared. The first tier that fires wins (H2 needs >= 1 hit; the fallbacks
+    need >= 2 to avoid false positives)."""
+    h2 = list(H2_RE.finditer(text))
+    if h2:
+        return _matches_to_clauses(text, h2, group=1, tier="h2")
+    bold = list(_BOLD_HEADING_RE.finditer(text))
+    if len(bold) >= 2:
+        return _matches_to_clauses(text, bold, group=1, tier="bold-numbered")
+    caps = [
+        m for m in _ALL_CAPS_HEADING_RE.finditer(text)
+        if _qualifies_as_all_caps_heading(m.group(1))
+    ]
+    if len(caps) >= 2:
+        return _matches_to_clauses(text, caps, group=1, tier="all-caps")
+    return []
+
+
+def _matches_to_clauses(text: str, matches: List["re.Match[str]"], group: int,
+                        tier: str) -> List[JSON]:
+    """Build clause dicts from regex matches whose `group` holds the title.
+    The clause body runs from the heading line to the next heading (or EOF)."""
+    out: List[JSON] = []
+    for i, m in enumerate(matches):
+        raw = m.group(group).strip()
+        title = _strip_clause_number(raw)
+        # Anchor line: for ALL-CAPS, step past the leading newline gap the
+        # regex captured so the span starts at the heading line itself.
+        anchor_start = text.rfind(m.group(group), m.start(), m.end())
+        line_start = text.rfind("\n", 0, anchor_start) + 1
+        line_end = text.find("\n", line_start)
+        if line_end == -1:
+            line_end = len(text)
+        anchor = text[line_start:line_end]
+        start = line_start
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        out.append({
+            "title": title,
+            "detected": anchor.strip(),
+            "anchor": anchor,
+            "start": start,
+            "end": end,
+            "tier": tier,
+        })
+    return out
+
+
+def _norm_clause_key(s: str) -> str:
+    """Normalize a clause title/alias for matching (number-stripped, lowercased)."""
+    return _strip_clause_number(s).strip().lower()
+
+
+# ---------------------------------------------------------------------------
+# Canonical clause vocabulary
+#
+# template-vault-cli stores `clause_aliases` per-template (canonical_title ->
+# [alias, ...]). A FOREIGN document carries no such map, so extract-cli ships a
+# built-in default vocabulary -- the suite's shared clause names -- and maps a
+# document's detected clause titles onto it. This is the differentiator: it
+# turns "whatever the counterparty called their sections" into the canonical
+# vocabulary nda-review-cli / compare-cli already speak.
+# ---------------------------------------------------------------------------
+
+CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
+    "Definitions": ["definitions", "defined terms", "interpretation", "construction"],
+    "Confidentiality": [
+        "confidentiality", "non-disclosure", "nondisclosure", "confidential information",
+        "confidentiality obligations", "secrecy", "protection of confidential information",
+    ],
+    "Term": ["term", "duration", "agreement term", "term of agreement"],
+    "Termination": ["termination", "term and termination", "right to terminate", "termination for cause"],
+    "Governing Law": [
+        "governing law", "applicable law", "choice of law", "law and jurisdiction",
+        "governing law and jurisdiction",
+    ],
+    "Dispute Resolution": ["dispute resolution", "arbitration", "disputes", "mediation"],
+    "Indemnification": ["indemnification", "indemnity", "hold harmless", "indemnities"],
+    "Limitation of Liability": [
+        "limitation of liability", "liability", "limitation on liability", "liability cap",
+        "exclusion of liability",
+    ],
+    "Intellectual Property": [
+        "intellectual property", "ip rights", "ownership of ip", "proprietary rights",
+        "intellectual property rights", "ownership",
+    ],
+    "Payment": ["payment", "fees", "compensation", "fees and payment", "consideration", "pricing"],
+    "Warranties": [
+        "warranties", "representations and warranties", "warranty", "reps and warranties",
+        "representations",
+    ],
+    "Assignment": ["assignment", "assignability", "assignment and delegation"],
+    "Notices": ["notices", "notice"],
+    "Force Majeure": ["force majeure", "acts of god"],
+    "Entire Agreement": ["entire agreement", "integration", "complete agreement"],
+    "Severability": ["severability", "severance"],
+    "Waiver": ["waiver", "no waiver"],
+    "Non-Compete": [
+        "non-compete", "noncompete", "noncompetition", "non-competition",
+        "covenant not to compete",
+    ],
+    "Non-Solicitation": ["non-solicit", "non-solicitation", "nonsolicitation", "no solicitation"],
+    "Data Protection": ["data protection", "data privacy", "gdpr", "privacy", "personal data"],
+    "Insurance": ["insurance"],
+    "Counterparts": ["counterparts"],
+    "Survival": ["survival", "survival of obligations"],
+    "Amendment": ["amendment", "amendments", "modification", "modifications", "changes"],
+    "Relationship of the Parties": [
+        "relationship of the parties", "independent contractor", "no partnership", "no agency",
+    ],
+    "Compliance with Laws": ["compliance with laws", "compliance", "anti-corruption"],
+    "Publicity": ["publicity", "announcements", "press releases"],
+}
+
+
+def _build_alias_index() -> Dict[str, str]:
+    idx: Dict[str, str] = {}
+    for canonical, aliases in CANONICAL_CLAUSE_ALIASES.items():
+        idx[_norm_clause_key(canonical)] = canonical
+        for alias in aliases:
+            idx[_norm_clause_key(alias)] = canonical
+    return idx
+
+
+_ALIAS_INDEX = _build_alias_index()
+
+
+def _canonicalize_clause(detected_title: str) -> Tuple[Optional[str], bool]:
+    """Map a detected clause title to a canonical suite title.
+
+    Returns (canonical_title, mapped). On an exact alias/canonical hit, returns
+    the canonical name. Otherwise tries a substring containment match against
+    the index (so 'Confidentiality and Non-Disclosure' still maps). Falls back
+    to a Title-Cased copy of the detected title with mapped=False."""
+    key = _norm_clause_key(detected_title)
+    if not key:
+        return None, False
+    canon = _ALIAS_INDEX.get(key)
+    if canon is not None:
+        return canon, True
+    # Containment: longest alias key contained in (or containing) the title.
+    best: Optional[str] = None
+    best_len = 0
+    for alias_key, canonical in _ALIAS_INDEX.items():
+        if len(alias_key) >= 5 and (alias_key in key or key in alias_key):
+            if len(alias_key) > best_len:
+                best, best_len = canonical, len(alias_key)
+    if best is not None:
+        return best, True
+    return _titlecase(detected_title), False
+
+
+# ---------------------------------------------------------------------------
+# Confidence model + field envelope
+# ---------------------------------------------------------------------------
+
+
+def _field(value: Any, confidence: float, source: str = "deterministic") -> JSON:
+    """Wrap an extracted value with a confidence and a source. A `None` value
+    collapses to the canonical 'not found' envelope."""
+    if value is None:
+        return {"value": None, "confidence": 0.0, "source": "none"}
+    return {"value": value, "confidence": round(float(confidence), 2), "source": source}
+
+
+def _none_field() -> JSON:
+    return {"value": None, "confidence": 0.0, "source": "none"}
+
+
+def _titlecase(s: str) -> str:
+    s = s.strip()
+    if not s:
+        return s
+    # A fully-shouted heading (ALL-CAPS, e.g. from a PDF) is title-cased
+    # outright; in a mixed-case title a short all-caps word is treated as a
+    # deliberate acronym ("IP Rights") and preserved.
+    whole_upper = s.isupper()
+    parts = []
+    for w in s.split():
+        if not whole_upper and w.isupper() and len(w) <= 4:
+            parts.append(w)
+        else:
+            parts.append(w[:1].upper() + w[1:].lower())
+    return " ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Deterministic extractors
+# ---------------------------------------------------------------------------
+
+_MONTHS = (
+    "January|February|March|April|May|June|July|August|September|October|"
+    "November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec"
+)
+_DATE_PAT = (
+    r"(?:"
+    r"\d{4}-\d{2}-\d{2}"
+    r"|\d{1,2}/\d{1,2}/\d{2,4}"
+    r"|(?:" + _MONTHS + r")\.?\s+\d{1,2}(?:st|nd|rd|th)?,?\s+\d{4}"
+    r"|\d{1,2}(?:st|nd|rd|th)?\s+(?:day\s+of\s+)?(?:" + _MONTHS + r")\.?,?\s+\d{4}"
+    r")"
+)
+_DATE_RE = re.compile(_DATE_PAT, re.IGNORECASE)
+
+_EFFECTIVE_RE = re.compile(
+    r"(?:effective(?:\s+date)?(?:\s+(?:as\s+of|date|on))?|"
+    r"dated(?:\s+as\s+of)?|"
+    r"made(?:\s+and\s+entered\s+into)?(?:\s+as\s+of|\s+on)?|"
+    r"entered\s+into(?:\s+as\s+of|\s+on)?)"
+    r"[\s:,]+(?:the\s+)?(" + _DATE_PAT + r")",
+    re.IGNORECASE,
+)
+_EXPIRE_RE = re.compile(
+    r"(?:expir\w*|terminat\w*\s+on|end(?:s|ing)?\s+on|until|through|"
+    r"remain\s+in\s+effect\s+until)"
+    r"[\s:,]+(?:the\s+)?(" + _DATE_PAT + r")",
+    re.IGNORECASE,
+)
+
+_PARTY_BLOCK_RE = re.compile(
+    r"\b(?:by\s+and\s+between|between)\s+(.{2,200}?)\s+\band\b\s+(.{2,200}?)"
+    r"(?=[\.;\n]|\bwhereas\b|\beffective\b|\bdated\b|\bhaving\b|\bwith\s+offices\b|$)",
+    re.IGNORECASE | re.DOTALL,
+)
+_ROLE_PAREN_RE = re.compile(
+    r"\(\s*(?:the\s+)?[\"“]?([^\"”()]+?)[\"”]?\s*\)"
+)
+
+# Keyword portion is case-insensitive via an inline (?i:...) group; the
+# jurisdiction capture stays case-sensitive so a leading [A-Z] actually
+# enforces a capitalized proper noun (a global re.IGNORECASE would defeat that
+# and over-capture trailing lowercase clauses like ", without regard to ...").
+_GOV_LAW_RE = re.compile(
+    r"(?i:governed\s+by(?:\s+and\s+construed\s+in\s+accordance\s+with)?\s+"
+    r"(?:the\s+)?laws?\s+of\s+(?:the\s+)?)"
+    r"([A-Z][A-Za-z\.\- ]+?(?:,\s*[A-Z][A-Za-z\.\- ]+?)?)"
+    r"(?=[\.,;\n)]|\s+and\b|\s+without\b|$)",
+)
+
+# Anchor on a term/period/duration keyword, then allow a short same-sentence
+# gap before the "<number> <unit>" so phrasings like "the initial term of this
+# Agreement is three (3) years" match as well as "for a period of two years".
+_TERM_LEN_RE = re.compile(
+    r"(?:(?:initial\s+)?term|period|duration|"
+    r"in\s+(?:full\s+)?(?:force\s+and\s+)?effect\s+for)"
+    r"[^.\n]{0,40}?\b(\d+|[A-Za-z]+)(?:\s*\(\d+\))?\s+(years?|months?|weeks?|days?)\b",
+    re.IGNORECASE,
+)
+_NOTICE_RE = re.compile(
+    r"(\d+|[A-Za-z]+)(?:\s*\(\d+\))?\s+days?[’'`]?s?\s+"
+    r"(?:prior\s+)?(?:written\s+)?notice",
+    re.IGNORECASE,
+)
+_AUTORENEW_POS_RE = re.compile(
+    r"automatic(?:ally)?\s+renew|auto-?renew|renew(?:s|ed)?\s+automatically|"
+    r"successive\s+(?:\d+|[A-Za-z]+)[\s-]+(?:year|month)|"
+    r"shall\s+(?:automatically\s+)?renew\s+for",
+    re.IGNORECASE,
+)
+# Strong negations only. Deliberately excludes a bare "non-renewal", which in
+# practice appears in "...notice of non-renewal" -- the opt-OUT mechanism of a
+# contract that DOES auto-renew, not a statement that it doesn't.
+_AUTORENEW_NEG_RE = re.compile(
+    r"(?:shall|will|does|may)\s+not\s+(?:automatically\s+)?renew|"
+    r"no\s+automatic\s+renewal|"
+    r"not\s+(?:be\s+)?renewed?\s+automatically|"
+    r"shall\s+not\s+(?:be\s+)?(?:automatically\s+)?renewed?",
+    re.IGNORECASE,
+)
+_MONEY_RE = re.compile(
+    r"(?:\$|US\$|USD\s?|EUR\s?|€|£|GBP\s?)"
+    r"\s?\d{1,3}(?:,\d{3})*(?:\.\d+)?"
+    r"(?:\s?(?:million|billion|thousand|bn|m|k))?",
+    re.IGNORECASE,
+)
+_DEFTERM_QUOTED_RE = re.compile(
+    r"[\"“]([A-Z][A-Za-z0-9][A-Za-z0-9 \-'/&]{1,60})[\"”]"
+)
+_DEFTERM_PAREN_RE = re.compile(
+    r"\(\s*(?:the\s+)?[\"“]?([A-Z][A-Za-z0-9][A-Za-z0-9 \-'/&]{1,40})[\"”]?\s*\)"
+)
+
+_WORD_NUMBERS: Dict[str, int] = {
+    "zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11,
+    "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
+    "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
+    "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100,
+}
+
+
+def _word_to_int(token: str) -> Optional[int]:
+    token = token.strip().lower()
+    if token.isdigit():
+        return int(token)
+    return _WORD_NUMBERS.get(token)
+
+
+def _parse_date_to_iso(s: str) -> Optional[str]:
+    """Best-effort normalization of a matched date string to ISO (YYYY-MM-DD).
+    Returns None when no known format parses."""
+    cleaned = re.sub(r"(\d+)(st|nd|rd|th)", r"\1", s.strip().rstrip("."), flags=re.IGNORECASE)
+    cleaned = re.sub(r"\bday\s+of\s+", "", cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.replace(",", " ")
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    fmts = (
+        "%Y-%m-%d", "%B %d %Y", "%b %d %Y", "%d %B %Y", "%d %b %Y",
+        "%m/%d/%Y", "%m/%d/%y", "%d/%m/%Y",
+    )
+    for f in fmts:
+        try:
+            return _dt.datetime.strptime(cleaned, f).date().isoformat()
+        except ValueError:
+            continue
+    return None
+
+
+def _date_field(match: Optional["re.Match[str]"]) -> JSON:
+    if match is None:
+        return _none_field()
+    raw = match.group(1).strip()
+    iso = _parse_date_to_iso(raw)
+    if iso is not None:
+        return _field(iso, 0.85)
+    return _field(raw, 0.55)
+
+
+def _split_name_role(s: str) -> Tuple[str, Optional[str]]:
+    s = s.strip().strip(",").strip()
+    role: Optional[str] = None
+    m = _ROLE_PAREN_RE.search(s)
+    if m:
+        candidate = m.group(1).strip()
+        # Only treat short, role-like parentheticals as roles.
+        if len(candidate) <= 40 and candidate.lower() not in ("a", "an", "the"):
+            role = candidate
+        s = (s[: m.start()] + s[m.end():]).strip().rstrip(",").strip()
+    s = s.strip("\"“”").strip()
+    s = re.sub(r"\s+", " ", s)
+    return s, role
+
+
+def extract_parties(text: str) -> List[JSON]:
+    m = _PARTY_BLOCK_RE.search(text)
+    if not m:
+        return []
+    out: List[JSON] = []
+    for raw in (m.group(1), m.group(2)):
+        # Party names can wrap across lines ("...(the \"Disclosing\nParty\")");
+        # collapse whitespace rather than truncating at the first newline.
+        raw = re.sub(r"\s+", " ", raw).strip()
+        name, role = _split_name_role(raw)
+        if not name or len(name) < 2 or len(name) > 120:
+            continue
+        entry: JSON = {"name": name, "confidence": 0.9, "source": "deterministic"}
+        entry["role"] = role
+        out.append(entry)
+    return out
+
+
+def extract_dates(text: str) -> JSON:
+    return {
+        "effective": _date_field(_EFFECTIVE_RE.search(text)),
+        "expiration": _date_field(_EXPIRE_RE.search(text)),
+    }
+
+
+def extract_governing_law(text: str) -> JSON:
+    m = _GOV_LAW_RE.search(text)
+    if not m:
+        return _none_field()
+    juris = re.sub(r"\s+", " ", m.group(1).strip().rstrip(".,")).strip()
+    if not juris:
+        return _none_field()
+    return _field(juris, 0.85)
+
+
+def extract_term(text: str) -> JSON:
+    length = _none_field()
+    m = _TERM_LEN_RE.search(text)
+    if m:
+        num = _word_to_int(m.group(1))
+        unit = m.group(2).lower().rstrip("s")
+        if num is not None:
+            length = _field(f"{num} {unit}{'s' if num != 1 else ''}", 0.7)
+        else:
+            length = _field(f"{m.group(1)} {m.group(2)}".strip(), 0.5)
+
+    notice = _none_field()
+    nm = _NOTICE_RE.search(text)
+    if nm:
+        days = _word_to_int(nm.group(1))
+        if days is not None:
+            notice = _field(days, 0.7)
+
+    auto = _none_field()
+    if _AUTORENEW_NEG_RE.search(text):
+        auto = _field(False, 0.7)
+    elif _AUTORENEW_POS_RE.search(text):
+        auto = _field(True, 0.65)
+
+    return {"length": length, "auto_renew": auto, "notice_period_days": notice}
+
+
+def extract_value(text: str) -> JSON:
+    m = _MONEY_RE.search(text)
+    if not m:
+        return _none_field()
+    return _field(re.sub(r"\s+", " ", m.group(0).strip()), 0.6)
+
+
+def extract_defined_terms(text: str) -> List[JSON]:
+    seen: Dict[str, None] = {}
+    for rx in (_DEFTERM_QUOTED_RE, _DEFTERM_PAREN_RE):
+        for m in rx.finditer(text):
+            term = re.sub(r"\s+", " ", m.group(1).strip())
+            # Reject sentence-like or lowercase-y captures.
+            if len(term) < 2 or len(term.split()) > 6:
+                continue
+            if not term[0].isupper():
+                continue
+            seen.setdefault(term, None)
+            if len(seen) >= 50:
+                break
+    return [{"term": t, "confidence": 0.6, "source": "deterministic"} for t in seen]
+
+
+def extract_clauses(text: str) -> List[JSON]:
+    out: List[JSON] = []
+    for c in detect_clauses(text):
+        canonical, mapped = _canonicalize_clause(c["title"])
+        tier = c["tier"]
+        base = {"h2": 0.95, "bold-numbered": 0.85, "all-caps": 0.75, "explicit": 0.95}.get(tier, 0.7)
+        conf = round(base * (1.0 if mapped else 0.75), 2)
+        out.append({
+            "canonical_title": canonical,
+            "detected_title": c["detected"],
+            "tier": tier,
+            "span": {"start": int(c["start"]), "end": int(c["end"])},
+            "confidence": conf,
+            "source": "deterministic",
+            "mapped": mapped,
+        })
+    return out
+
+
+def extract_title(text: str, path: Optional[Path], fmt: str) -> Optional[str]:
+    m = re.search(r"^#\s+(.+?)\s*$", text, re.MULTILINE)
+    if m:
+        return m.group(1).strip()
+    for line in text.splitlines():
+        ls = line.strip().lstrip("#").strip()
+        if ls:
+            if len(ls) <= 90:
+                return ls
+            break
+    if path is not None:
+        return _titlecase(path.stem.replace("_", " ").replace("-", " "))
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Input readers
+# ---------------------------------------------------------------------------
+
+
+def _detect_format(path: Path, raw: bytes) -> str:
+    ext = path.suffix.lower()
+    if ext in (".md", ".markdown"):
+        return "markdown"
+    if ext == ".txt":
+        return "text"
+    if ext == ".docx":
+        return "docx"
+    if ext == ".pdf":
+        return "pdf"
+    if raw[:4] == b"%PDF":
+        return "pdf"
+    if raw[:2] == b"PK":
+        return "docx"
+    return "text"
+
+
+def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str, List[str]]:
+    """Extract text from a .docx. Uses python-docx for higher fidelity when the
+    optional [docx] extra is installed; otherwise a stdlib zipfile/XML reader
+    (always available) handles paragraphs, table cells, and bold runs.
+
+    `prefer_optional=False` forces the stdlib reader regardless of what's
+    installed -- used to pin reproducible golden fixtures."""
+    warnings: List[str] = []
+    if prefer_optional and importlib.util.find_spec("docx") is not None:
+        try:
+            mod = importlib.import_module("docx")
+            document_cls = getattr(mod, "Document")
+            doc = document_cls(str(path))
+            lines: List[str] = []
+            for para in doc.paragraphs:
+                line = (para.text or "").strip()
+                if line and para.runs and all(getattr(r, "bold", False) for r in para.runs if (r.text or "").strip()):
+                    line = f"**{line}**"
+                lines.append(line)
+            for table in getattr(doc, "tables", []):
+                for row in table.rows:
+                    for cell in row.cells:
+                        ct = (cell.text or "").strip()
+                        if ct:
+                            lines.append(ct)
+            return "\n\n".join(lines), warnings
+        except Exception as e:  # pragma: no cover - fidelity path
+            warnings.append(f"python-docx read failed ({e}); falling back to stdlib reader")
+    try:
+        return _read_docx_stdlib(raw), warnings
+    except Exception as e:
+        warnings.append(f"could not parse .docx ({e}); treating as empty")
+        return "", warnings
+
+
+def _read_docx_stdlib(raw: bytes) -> str:
+    import io
+    import zipfile
+    import xml.etree.ElementTree as ET
+
+    w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        xml = z.read("word/document.xml")
+    root = ET.fromstring(xml)
+    paras: List[str] = []
+    # iter over w:p in document order (includes paragraphs inside table cells).
+    for p in root.iter(w + "p"):
+        run_texts: List[str] = []
+        any_text = False
+        all_bold = True
+        for r in p.iter(w + "r"):
+            rpr = r.find(w + "rPr")
+            bold = rpr is not None and rpr.find(w + "b") is not None
+            txt = "".join(t.text or "" for t in r.iter(w + "t"))
+            if txt:
+                any_text = True
+                if not bold:
+                    all_bold = False
+                run_texts.append(txt)
+        line = "".join(run_texts).strip()
+        if not line:
+            paras.append("")
+            continue
+        if any_text and all_bold:
+            line = f"**{line}**"
+        paras.append(line)
+    return "\n\n".join(paras)
+
+
+def _read_pdf(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str, List[str]]:
+    """Extract text from a .pdf. Uses pypdf when the optional [pdf] extra is
+    installed; otherwise a stdlib best-effort reader (zlib FlateDecode + text
+    operators). Scanned/image-only PDFs yield no text and are warned about.
+
+    `prefer_optional=False` forces the stdlib reader regardless of what's
+    installed -- used to pin reproducible golden fixtures."""
+    warnings: List[str] = []
+    if prefer_optional and importlib.util.find_spec("pypdf") is not None:
+        try:
+            mod = importlib.import_module("pypdf")
+            reader_cls = getattr(mod, "PdfReader")
+            import io
+            reader = reader_cls(io.BytesIO(raw))
+            pages = [page.extract_text() or "" for page in reader.pages]
+            return "\n\n".join(pages), warnings
+        except Exception as e:  # pragma: no cover - fidelity path
+            warnings.append(f"pypdf read failed ({e}); falling back to stdlib reader")
+    try:
+        text = _read_pdf_stdlib(raw)
+    except Exception as e:
+        warnings.append(f"could not parse .pdf ({e}); treating as empty")
+        return "", warnings
+    return text, warnings
+
+
+_PDF_TOKEN_RE = re.compile(
+    r"\((?:\\.|[^\\()])*\)|\[(?:\\.|[^\]\\])*\]|Tj|TJ|Td|TD|T\*|BT|ET|'|\""
+)
+
+
+def _pdf_unescape(s: str) -> str:
+    out: List[str] = []
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if ch == "\\" and i + 1 < n:
+            nxt = s[i + 1]
+            if nxt in "()\\":
+                out.append(nxt)
+                i += 2
+                continue
+            if nxt == "n":
+                out.append("\n")
+                i += 2
+                continue
+            if nxt in "rtbf":
+                out.append({"r": "\r", "t": "\t", "b": "", "f": ""}[nxt])
+                i += 2
+                continue
+            mo = re.match(r"[0-7]{1,3}", s[i + 1:i + 4])
+            if mo:
+                out.append(chr(int(mo.group(0), 8) & 0xFF))
+                i += 1 + len(mo.group(0))
+                continue
+            out.append(nxt)
+            i += 2
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _pdf_text_from_content(content: bytes) -> str:
+    s = content.decode("latin-1", "replace")
+    lines: List[str] = []
+    cur: List[str] = []
+
+    def flush() -> None:
+        if cur:
+            lines.append("".join(cur))
+            cur.clear()
+
+    for m in _PDF_TOKEN_RE.finditer(s):
+        tok = m.group(0)
+        if tok.startswith("("):
+            cur.append(_pdf_unescape(tok[1:-1]))
+        elif tok.startswith("["):
+            for sm in re.finditer(r"\((?:\\.|[^\\()])*\)", tok):
+                cur.append(_pdf_unescape(sm.group(0)[1:-1]))
+        elif tok in ("Td", "TD", "T*", "'", '"', "BT", "ET"):
+            flush()
+    flush()
+    return "\n".join(lines)
+
+
+def _read_pdf_stdlib(raw: bytes) -> str:
+    import zlib
+
+    chunks: List[str] = []
+    idx = 0
+    while True:
+        s = raw.find(b"stream", idx)
+        if s == -1:
+            break
+        e = raw.find(b"endstream", s)
+        if e == -1:
+            break
+        body = raw[s + len(b"stream"):e].lstrip(b"\r\n")
+        try:
+            content = zlib.decompress(body)
+        except Exception:
+            content = body
+        chunks.append(_pdf_text_from_content(content))
+        idx = e + len(b"endstream")
+    return "\n".join(c for c in chunks if c.strip())
+
+
+def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, str, List[str]]:
+    """Read a document from disk. Returns (raw_bytes, text, format, warnings).
+    Never raises on parse trouble -- degrades to empty text with a warning.
+
+    `prefer_optional=False` forces the stdlib readers for .docx/.pdf so output
+    is reproducible regardless of which extras are installed (used by the
+    golden fixtures). The CLI default (True) uses the best reader available."""
+    if not path.exists():
+        raise ExtractError(f"no such file: {path}")
+    if path.is_dir():
+        raise ExtractError(f"path is a directory, not a file: {path}")
+    raw = path.read_bytes()
+    fmt = _detect_format(path, raw)
+    warnings: List[str] = []
+    if fmt in ("markdown", "text"):
+        text = raw.decode("utf-8", "replace")
+    elif fmt == "docx":
+        text, w = _read_docx(path, raw, prefer_optional)
+        warnings += w
+    elif fmt == "pdf":
+        text, w = _read_pdf(path, raw, prefer_optional)
+        warnings += w
+    else:  # pragma: no cover - unreachable; _detect_format only returns the above
+        text = raw.decode("utf-8", "replace")
+    if not text.strip():
+        warnings.append(
+            f"no extractable text from {fmt} input (scanned or image-only?); "
+            "output will be sparse"
+        )
+    return raw, text, fmt, warnings
+
+
+# ---------------------------------------------------------------------------
+# Extraction orchestration
+# ---------------------------------------------------------------------------
+
+
+def build_extraction(text: str, raw: bytes, fmt: str,
+                     source_path: Optional[str]) -> JSON:
+    """Run the deterministic tier and assemble the output contract object."""
+    sha = hashlib.sha256(raw).hexdigest()
+    return {
+        "document": {
+            "title": extract_title(text, Path(source_path) if source_path else None, fmt),
+            "format": fmt,
+            "sha256": sha,
+            "source_path": source_path,
+        },
+        "parties": extract_parties(text),
+        "dates": extract_dates(text),
+        "term": extract_term(text),
+        "governing_law": extract_governing_law(text),
+        "clauses": extract_clauses(text),
+        "defined_terms": extract_defined_terms(text),
+        "value": extract_value(text),
+        "_meta": {
+            "extractor_version": EXTRACTOR_VERSION,
+            "tiers_used": ["deterministic"],
+            "llm_used": False,
+        },
+    }
+
+
+def _is_low_signal(result: JSON) -> bool:
+    """True when the deterministic tier found essentially nothing extractable
+    (e.g. a scanned PDF). Used to set a non-zero exit code as a 'finding'."""
+    if result["parties"]:
+        return False
+    if result["clauses"]:
+        return False
+    if result["dates"]["effective"]["source"] != "none":
+        return False
+    if result["governing_law"]["source"] != "none":
+        return False
+    if result["defined_terms"]:
+        return False
+    return True
+
+
+# ---------------------------------------------------------------------------
+# LLM tier  (opt-in only, never in a hot path)
+# ---------------------------------------------------------------------------
+
+LLM_CONFIG_PATHS = (
+    Path.home() / ".config" / "contract-ops" / "llm.json",
+    Path("config") / "llm.json",
+)
+
+
+def load_llm_config() -> Optional[JSON]:
+    """Suite-shared LLM config lookup: ~/.config/contract-ops/llm.json first,
+    then a repo-local ./config/llm.json. Returns the first valid one, else None."""
+    for p in LLM_CONFIG_PATHS:
+        try:
+            if p.is_file():
+                data = json.loads(p.read_text(encoding="utf-8"))
+                if isinstance(data, dict) and data.get("api_key"):
+                    return data
+        except (OSError, json.JSONDecodeError):
+            continue
+    return None
+
+
+_LLM_PROMPT = (
+    "You are a contract-extraction assistant. Given the contract text, return "
+    "ONLY a compact JSON object with keys: renewal_mechanics (string or null), "
+    "obligations (array of short strings, max 5), governing_law (string or "
+    "null). Base answers strictly on the text. No prose, JSON only.\n\n"
+    "CONTRACT:\n"
+)
+
+
+def _llm_request(cfg: JSON, prompt: str, timeout: float = 30.0) -> Optional[str]:
+    provider = str(cfg.get("provider", "anthropic")).lower()
+    model = cfg.get("model") or ("claude-sonnet-4-6" if provider == "anthropic" else "gpt-4o-mini")
+    api_key = cfg["api_key"]
+    if provider == "anthropic":
+        url = "https://api.anthropic.com/v1/messages"
+        payload = {
+            "model": model,
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        headers = {
+            "content-type": "application/json",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+        }
+    else:
+        base = str(cfg.get("base_url") or "https://api.openai.com/v1").rstrip("/")
+        url = f"{base}/chat/completions"
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        headers = {
+            "content-type": "application/json",
+            "authorization": f"Bearer {api_key}",
+        }
+    req = urllib.request.Request(
+        url, data=json.dumps(payload).encode("utf-8"), headers=headers, method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:  # nosec - opt-in
+        body = json.loads(resp.read().decode("utf-8"))
+    if provider == "anthropic":
+        parts = body.get("content") or []
+        return "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+    choices = body.get("choices") or []
+    if choices:
+        return str(choices[0].get("message", {}).get("content", ""))
+    return None
+
+
+def _extract_json_object(s: str) -> Optional[JSON]:
+    start = s.find("{")
+    end = s.rfind("}")
+    if start == -1 or end == -1 or end < start:
+        return None
+    try:
+        obj = json.loads(s[start:end + 1])
+        return obj if isinstance(obj, dict) else None
+    except json.JSONDecodeError:
+        return None
+
+
+def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
+    """Opt-in enrichment of fuzzy fields. Mutates `result` in place. Any
+    failure (no config, network error, bad JSON) degrades gracefully: a warning
+    to stderr and the deterministic output is left untouched."""
+    cfg = load_llm_config()
+    if cfg is None:
+        _warn(args_ns, "no LLM config found (~/.config/contract-ops/llm.json or "
+                       "./config/llm.json); skipping --llm enrichment")
+        return
+    prompt = _LLM_PROMPT + text[:12000]
+    try:
+        raw = _llm_request(cfg, prompt)
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
+        _warn(args_ns, f"LLM request failed ({e}); keeping deterministic output only")
+        return
+    if not raw:
+        _warn(args_ns, "LLM returned no content; keeping deterministic output only")
+        return
+    obj = _extract_json_object(raw)
+    if obj is None:
+        _warn(args_ns, "could not parse LLM JSON response; keeping deterministic output only")
+        return
+
+    enriched = False
+    rm = obj.get("renewal_mechanics")
+    if isinstance(rm, str) and rm.strip():
+        result["term"]["renewal_mechanics"] = _field(rm.strip(), 0.6, "llm")
+        enriched = True
+    obligations = obj.get("obligations")
+    if isinstance(obligations, list) and obligations:
+        result["obligations"] = [
+            {"text": str(o).strip(), "confidence": 0.55, "source": "llm"}
+            for o in obligations[:5] if str(o).strip()
+        ]
+        enriched = True
+    gl = obj.get("governing_law")
+    if isinstance(gl, str) and gl.strip() and result["governing_law"]["source"] == "none":
+        result["governing_law"] = _field(gl.strip(), 0.6, "llm")
+        enriched = True
+
+    result["_meta"]["llm_used"] = True
+    if enriched and "llm" not in result["_meta"]["tiers_used"]:
+        result["_meta"]["tiers_used"].append("llm")
+
+
+# ---------------------------------------------------------------------------
+# Output rendering
+# ---------------------------------------------------------------------------
+
+TOP_LEVEL_FIELDS = (
+    "document", "parties", "dates", "term", "governing_law",
+    "clauses", "defined_terms", "value",
+)
+
+
+def _apply_field_subset(result: JSON, fields: List[str]) -> JSON:
+    wanted = {f.strip() for f in fields if f.strip()}
+    out: JSON = {k: v for k, v in result.items() if k in wanted}
+    out["_meta"] = result["_meta"]  # provenance always travels with the payload
+    return out
+
+
+def _strip_confidence(obj: Any) -> Any:
+    """Recursively drop confidence/source markers for the --no-confidence view.
+    Collapses single-remaining-key dicts ({"value": x} -> x, {"term": t} -> t)."""
+    if isinstance(obj, dict):
+        d = {k: _strip_confidence(v) for k, v in obj.items()
+             if k not in ("confidence", "source")}
+        if len(d) == 1:
+            return next(iter(d.values()))
+        return d
+    if isinstance(obj, list):
+        return [_strip_confidence(v) for v in obj]
+    return obj
+
+
+def render_json(result: JSON, no_confidence: bool) -> str:
+    payload = _strip_confidence(result) if no_confidence else result
+    return json.dumps(payload, indent=2, ensure_ascii=True, sort_keys=False)
+
+
+def _fv(field: JSON) -> str:
+    v = field.get("value")
+    if v is None:
+        return _dim("(not found)")
+    return str(v)
+
+
+def render_table(result: JSON, no_confidence: bool) -> str:
+    lines: List[str] = []
+    doc = result.get("document", {})
+    if doc:
+        lines.append(_bold("Document"))
+        lines.append(f"  title       : {doc.get('title') or _dim('(none)')}")
+        lines.append(f"  format      : {doc.get('format')}")
+        lines.append(f"  sha256      : {str(doc.get('sha256'))[:16]}...")
+    parties = result.get("parties")
+    if parties is not None:
+        lines.append(_bold("Parties"))
+        if parties:
+            for p in parties:
+                role = f" ({p['role']})" if p.get("role") else ""
+                conf = "" if no_confidence else _dim(f"  [{p.get('confidence')}]")
+                lines.append(f"  - {p['name']}{role}{conf}")
+        else:
+            lines.append("  " + _dim("(none detected)"))
+    dates = result.get("dates")
+    if dates is not None:
+        lines.append(_bold("Dates"))
+        lines.append(f"  effective   : {_fv(dates['effective'])}")
+        lines.append(f"  expiration  : {_fv(dates['expiration'])}")
+    term = result.get("term")
+    if term is not None:
+        lines.append(_bold("Term"))
+        lines.append(f"  length      : {_fv(term['length'])}")
+        lines.append(f"  auto_renew  : {_fv(term['auto_renew'])}")
+        lines.append(f"  notice_days : {_fv(term['notice_period_days'])}")
+        if "renewal_mechanics" in term:
+            lines.append(f"  renewal     : {_fv(term['renewal_mechanics'])} {_dim('[llm]')}")
+    if "governing_law" in result:
+        lines.append(_bold("Governing law"))
+        lines.append(f"  {_fv(result['governing_law'])}")
+    if "value" in result:
+        lines.append(_bold("Value"))
+        lines.append(f"  {_fv(result['value'])}")
+    clauses = result.get("clauses")
+    if clauses is not None:
+        lines.append(_bold(f"Clause map ({len(clauses)})"))
+        if clauses:
+            lines.append("  " + _dim("canonical            tier           detected"))
+            for c in clauses:
+                canon = (c.get("canonical_title") or "")[:20].ljust(20)
+                tier = str(c.get("tier"))[:14].ljust(14)
+                det = c.get("detected_title", "")
+                flag = "" if c.get("mapped") else _yellow(" *")
+                conf = "" if no_confidence else _dim(f" [{c.get('confidence')}]")
+                lines.append(f"  {canon} {tier} {det}{flag}{conf}")
+            if any(not c.get("mapped") for c in clauses):
+                lines.append("  " + _dim("* = not mapped to suite vocabulary"))
+        else:
+            lines.append("  " + _dim("(no clause structure detected)"))
+    terms = result.get("defined_terms")
+    if terms is not None:
+        lines.append(_bold(f"Defined terms ({len(terms)})"))
+        if terms:
+            lines.append("  " + ", ".join(t["term"] for t in terms[:20]))
+        else:
+            lines.append("  " + _dim("(none detected)"))
+    meta = result.get("_meta", {})
+    lines.append(_dim(
+        f"tiers={','.join(meta.get('tiers_used', []))} "
+        f"llm={meta.get('llm_used')} extractor={meta.get('extractor_version')}"
+    ))
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Output JSON Schema  (the cross-CLI contract; source of truth for docs/spec/)
+# ---------------------------------------------------------------------------
+
+
+def output_schema() -> JSON:
+    field_ref = {"$ref": "#/$defs/field"}
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": "https://github.com/DrBaher/extract-cli/blob/main/docs/spec/extract-output.schema.json",
+        "title": f"extract-cli output schema (v{SCHEMA_VERSION})",
+        "description": (
+            "Structured payload emitted by `extract <path>` (default JSON output). "
+            "The cross-CLI contract that nda-review-cli, compare-cli and "
+            "contract-vault consume. Every extracted field carries a confidence "
+            "and a source in {deterministic, llm, none}: downstream treats fields "
+            "as 'verify, not trust'. Note: the --no-confidence view is a reduced "
+            "convenience projection NOT governed by this schema."
+        ),
+        "type": "object",
+        "required": [
+            "document", "parties", "dates", "term", "governing_law",
+            "clauses", "defined_terms", "value", "_meta",
+        ],
+        "additionalProperties": False,
+        "$defs": {
+            "source": {"enum": ["deterministic", "llm", "none"]},
+            "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+            "field": {
+                "type": "object",
+                "required": ["value", "confidence", "source"],
+                "properties": {
+                    "value": {},
+                    "confidence": {"$ref": "#/$defs/confidence"},
+                    "source": {"$ref": "#/$defs/source"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        "properties": {
+            "document": {
+                "type": "object",
+                "required": ["title", "format", "sha256", "source_path"],
+                "properties": {
+                    "title": {"type": ["string", "null"]},
+                    "format": {"enum": ["markdown", "text", "docx", "pdf"]},
+                    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                    "source_path": {"type": ["string", "null"]},
+                },
+                "additionalProperties": False,
+            },
+            "parties": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["name", "confidence", "source"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "role": {"type": ["string", "null"]},
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "dates": {
+                "type": "object",
+                "required": ["effective", "expiration"],
+                "properties": {"effective": field_ref, "expiration": field_ref},
+                "additionalProperties": False,
+            },
+            "term": {
+                "type": "object",
+                "required": ["length", "auto_renew", "notice_period_days"],
+                "properties": {
+                    "length": field_ref,
+                    "auto_renew": field_ref,
+                    "notice_period_days": field_ref,
+                    "renewal_mechanics": field_ref,
+                },
+                "additionalProperties": False,
+            },
+            "governing_law": field_ref,
+            "clauses": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": [
+                        "canonical_title", "detected_title", "tier",
+                        "span", "confidence", "source", "mapped",
+                    ],
+                    "properties": {
+                        "canonical_title": {"type": ["string", "null"]},
+                        "detected_title": {"type": "string"},
+                        "tier": {"enum": ["h2", "bold-numbered", "all-caps", "explicit", "llm"]},
+                        "span": {
+                            "type": "object",
+                            "required": ["start", "end"],
+                            "properties": {
+                                "start": {"type": "integer", "minimum": 0},
+                                "end": {"type": "integer", "minimum": 0},
+                            },
+                            "additionalProperties": False,
+                        },
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                        "mapped": {"type": "boolean"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "defined_terms": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["term", "confidence", "source"],
+                    "properties": {
+                        "term": {"type": "string"},
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "value": field_ref,
+            "obligations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["text", "confidence", "source"],
+                    "properties": {
+                        "text": {"type": "string"},
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "_meta": {
+                "type": "object",
+                "required": ["extractor_version", "tiers_used", "llm_used"],
+                "properties": {
+                    "extractor_version": {"type": "string"},
+                    "tiers_used": {"type": "array", "items": {"enum": ["deterministic", "llm"]}},
+                    "llm_used": {"type": "boolean"},
+                },
+                "additionalProperties": False,
+            },
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Field catalog (for `extract fields`)
+# ---------------------------------------------------------------------------
+
+FIELD_CATALOG: Tuple[Tuple[str, str, str], ...] = (
+    ("document.title", "deterministic", "Document title (first heading or filename)"),
+    ("parties", "deterministic", "Contracting parties ('between X and Y')"),
+    ("dates.effective", "deterministic", "Effective date (ISO-normalized when parseable)"),
+    ("dates.expiration", "deterministic", "Expiration date"),
+    ("term.length", "deterministic", "Term length, best-effort"),
+    ("term.notice_period_days", "deterministic", "Notice period in days, best-effort"),
+    ("term.auto_renew", "deterministic", "Auto-renewal flag, best-effort"),
+    ("governing_law", "deterministic", "Governing law / jurisdiction"),
+    ("clauses", "deterministic", "Clause map normalized to the suite's canonical vocabulary"),
+    ("defined_terms", "deterministic", "Defined-term inventory (quoted / parenthetical)"),
+    ("value", "deterministic", "Headline monetary value"),
+    ("term.renewal_mechanics", "llm", "Renewal mechanics (fuzzy; --llm only)"),
+    ("obligations", "llm", "Key obligation phrasing (fuzzy; --llm only)"),
+)
+
+
+# ---------------------------------------------------------------------------
+# Bundled demo fixture (so `extract demo` works from an installed wheel)
+# ---------------------------------------------------------------------------
+
+DEMO_DOCUMENT = """# Mutual Non-Disclosure Agreement
+
+This Mutual Non-Disclosure Agreement (the "Agreement") is made and entered into
+as of March 1, 2024, by and between Acme Robotics, Inc. (the "Disclosing Party")
+and Beta Logistics LLC (the "Receiving Party").
+
+## Definitions
+
+For purposes of this Agreement, "Confidential Information" means any non-public
+information disclosed by one party to the other.
+
+## Confidentiality Obligations
+
+The Receiving Party shall protect the Confidential Information using no less than
+reasonable care and shall not disclose it to any third party.
+
+## Term
+
+This Agreement shall remain in effect for a period of three (3) years from the
+Effective Date and shall automatically renew for successive one-year terms unless
+either party gives sixty (60) days' written notice of non-renewal.
+
+## Limitation of Liability
+
+In no event shall either party's aggregate liability exceed $50,000.
+
+## Governing Law
+
+This Agreement shall be governed by and construed in accordance with the laws of
+the State of Delaware, without regard to its conflict-of-laws principles.
+"""
+
+
+# ---------------------------------------------------------------------------
+# Command handlers
+# ---------------------------------------------------------------------------
+
+
+def cmd_extract(args: argparse.Namespace) -> int:
+    path = Path(args.path)
+    raw, text, fmt, warnings = load_source(path)
+    for w in warnings:
+        _warn(args, w)
+
+    result = build_extraction(text, raw, fmt, str(args.path))
+
+    if args.llm:
+        llm_enrich(result, text, args)
+
+    fmt_out = "json" if args.json else args.format
+    if args.fields:
+        result = _apply_field_subset(result, args.fields.split(","))
+
+    _why_print(
+        args, f"extracted {path.name}",
+        f"format={fmt} parties={len(result.get('parties', []))} "
+        f"clauses={len(result.get('clauses', []))}",
+        f"tiers={','.join(result['_meta']['tiers_used'])} "
+        f"llm_used={result['_meta']['llm_used']}",
+        f"low_signal={_is_low_signal(result)}" if not args.fields else "fields_subset=on",
+    )
+
+    if args.silent and fmt_out != "json":
+        pass  # silent suppresses the human table; JSON is the machine payload
+    elif fmt_out == "table":
+        print(render_table(result, args.no_confidence))
+    else:
+        print(render_json(result, args.no_confidence))
+
+    if not args.fields and _is_low_signal(result):
+        _warn(args, "document produced no high-signal fields (parties/clauses/dates); "
+                    "it may be scanned, image-only, or unstructured")
+        return 1
+    return 0
+
+
+def cmd_schema(args: argparse.Namespace) -> int:
+    print(json.dumps(output_schema(), indent=2, ensure_ascii=True))
+    return 0
+
+
+def cmd_fields(args: argparse.Namespace) -> int:
+    if args.json:
+        payload = [
+            {"field": f, "tier": tier, "description": desc}
+            for f, tier, desc in FIELD_CATALOG
+        ]
+        print(json.dumps(payload, indent=2, ensure_ascii=True))
+        return 0
+    print(_bold("Extractable fields") + _dim("  (tier = which extraction tier produces it)"))
+    for f, tier, desc in FIELD_CATALOG:
+        tag = _green(tier) if tier == "deterministic" else _yellow(tier)
+        print(f"  {f.ljust(26)} {tag.ljust(22)} {_dim(desc)}")
+    return 0
+
+
+def cmd_demo(args: argparse.Namespace) -> int:
+    raw = DEMO_DOCUMENT.encode("utf-8")
+    result = build_extraction(DEMO_DOCUMENT, raw, "markdown", "(bundled demo fixture)")
+    if not args.silent:
+        _eprint(_bold("extract-cli demo") + " -- the suite's passport control")
+        _eprint(_dim(
+            "  A foreign document comes in (here: a bundled NDA). The deterministic\n"
+            "  tier maps its clauses onto the suite's canonical vocabulary and pulls\n"
+            "  parties/dates/term/governing-law -- no LLM, no network. The JSON below\n"
+            "  is what nda-review-cli / compare-cli / contract-vault consume.\n"
+        ))
+    fmt_out = "json" if args.json else args.format
+    if fmt_out == "table":
+        print(render_table(result, args.no_confidence))
+    else:
+        print(render_json(result, args.no_confidence))
+    if not args.silent:
+        _eprint(_dim("\n  Try:  extract demo --format json | jq '.clauses[].canonical_title'"))
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Shell completion
+# ---------------------------------------------------------------------------
+
+_SUBCOMMANDS = ("schema", "fields", "demo", "completion")
+_GLOBAL_FLAGS = (
+    "--json", "--why", "-q", "--silent", "--no-color", "--llm",
+    "--format", "--fields", "--no-confidence", "-V", "--version", "-h", "--help",
+)
+
+_BASH_COMPLETION = r"""# extract-cli bash completion
+#   eval "$(extract completion bash)"
+_extract_completions() {
+    local cur prev
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    local cmds="schema fields demo completion"
+    local flags="--json --why -q --silent --no-color --llm --format --fields --no-confidence -V --version -h --help"
+    if [ "$COMP_CWORD" -eq 1 ]; then
+        COMPREPLY=( $(compgen -W "${cmds}" -- "${cur}") $(compgen -f -- "${cur}") )
+        return 0
+    fi
+    if [[ "${cur}" == -* ]]; then
+        COMPREPLY=( $(compgen -W "${flags}" -- "${cur}") )
+        return 0
+    fi
+    COMPREPLY=( $(compgen -f -- "${cur}") )
+}
+complete -F _extract_completions extract
+"""
+
+_ZSH_COMPLETION = r"""# extract-cli zsh completion
+#   eval "$(extract completion zsh)"
+_extract() {
+    local -a cmds flags
+    cmds=(
+        'schema:Print the output JSON Schema (the cross-CLI contract)'
+        'fields:List extractable fields and their tier'
+        'demo:Run extraction on a bundled fixture'
+        'completion:Emit a shell completion script'
+    )
+    flags=(
+        '--json' '--why' '-q' '--silent' '--no-color' '--llm'
+        '--format' '--fields' '--no-confidence' '-V' '--version'
+    )
+    if (( CURRENT == 2 )); then
+        _describe 'command' cmds
+        _files
+        return
+    fi
+    _files
+    compadd -- ${flags}
+}
+compdef _extract extract
+"""
+
+
+def cmd_completion(args: argparse.Namespace) -> int:
+    shell = (args.shell or "").lower()
+    if shell == "bash":
+        sys.stdout.write(_BASH_COMPLETION)
+        return 0
+    if shell == "zsh":
+        sys.stdout.write(_ZSH_COMPLETION)
+        return 0
+    raise ExtractError(f"unsupported shell: {args.shell!r}. Supported: bash, zsh.")
+
+
+def _completion_handler(argv: List[str]) -> int:
+    """Hidden `__complete` handler invoked by the shell-completion scripts."""
+    if not argv:
+        return 0
+    what = argv[0]
+    if what == "commands":
+        for c in _SUBCOMMANDS:
+            print(c)
+    elif what == "flags":
+        for f in _GLOBAL_FLAGS:
+            print(f)
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Argument parsing + main
+# ---------------------------------------------------------------------------
+
+
+def _add_common_output_flags(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--json", action="store_true",
+                   help="Force JSON output to stdout (the default).")
+    p.add_argument("--format", choices=("json", "table"), default="json",
+                   help="Output format (default: json).")
+    p.add_argument("--no-confidence", action="store_true",
+                   help="Omit confidence/source markers (reduced convenience view).")
+    p.add_argument("--why", action="store_true",
+                   help="Print a rationale block to stderr.")
+    p.add_argument("-q", "--silent", "--quiet", dest="silent", action="store_true",
+                   help="Suppress non-error diagnostics (and the human table).")
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="extract",
+        description="Ingest any contract (.md/.txt/.docx/.pdf) and emit structured "
+                    "JSON for the contract-ops CLI suite. See docs/INTEROP.md.",
+    )
+    parser.add_argument("-V", "--version", action="version",
+                        version=f"{CLI_NAME} {__version__}")
+    parser.add_argument("--no-color", action="store_true",
+                        help="Disable ANSI color (also honors NO_COLOR / FORCE_COLOR).")
+
+    sub = parser.add_subparsers(dest="command")
+
+    p_schema = sub.add_parser("schema", help="Print the output JSON Schema (the contract).")
+    p_schema.set_defaults(func=cmd_schema)
+
+    p_fields = sub.add_parser("fields", help="List extractable fields and their tier.")
+    p_fields.add_argument("--json", action="store_true", help="Emit JSON.")
+    p_fields.set_defaults(func=cmd_fields)
+
+    p_demo = sub.add_parser("demo", help="Run extraction on a bundled fixture.")
+    _add_common_output_flags(p_demo)
+    p_demo.add_argument("--llm", action="store_true", help=argparse.SUPPRESS)
+    p_demo.add_argument("--fields", default="", help=argparse.SUPPRESS)
+    p_demo.set_defaults(func=cmd_demo)
+
+    p_comp = sub.add_parser("completion", help="Emit a shell completion script (bash or zsh).")
+    p_comp.add_argument("shell", choices=("bash", "zsh"))
+    p_comp.set_defaults(func=cmd_completion)
+
+    p_ex = sub.add_parser("extract", help="Extract a document (explicit form of the default).")
+    _build_extract_args(p_ex)
+
+    return parser
+
+
+def _build_extract_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("path", help="Path to the document (.md/.txt/.docx/.pdf).")
+    p.add_argument("--llm", action="store_true",
+                   help="Opt-in LLM enrichment of fuzzy fields (renewal, obligations). "
+                        "Off by default; the deterministic core is fully useful without it.")
+    p.add_argument("--fields", default="",
+                   help="Comma-separated subset of top-level fields to emit "
+                        "(e.g. parties,clauses,governing_law).")
+    _add_common_output_flags(p)
+    p.set_defaults(func=cmd_extract)
+
+
+def _build_default_extract_parser() -> argparse.ArgumentParser:
+    """Parser for the bare `extract <path>` default action (no subcommand)."""
+    p = argparse.ArgumentParser(
+        prog="extract",
+        description="Extract a document into structured JSON (default action).",
+    )
+    p.add_argument("--no-color", action="store_true",
+                   help="Disable ANSI color (also honors NO_COLOR / FORCE_COLOR).")
+    _build_extract_args(p)
+    return p
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    # Locale-safe stdout/stderr: POSIX/C locale (common on macOS CI runners)
+    # leaves the streams in ASCII mode, so any non-ASCII char would raise
+    # UnicodeEncodeError. Force UTF-8 regardless of LANG/LC_ALL.
+    for _stream in (sys.stdout, sys.stderr):
+        if hasattr(_stream, "reconfigure"):
+            try:
+                _stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+    argv = sys.argv[1:] if argv is None else argv
+
+    # Global --no-color before argparse so it works on every form.
+    if "--no-color" in argv:
+        os.environ["NO_COLOR"] = "1"
+        argv = [a for a in argv if a != "--no-color"]
+
+    # Hidden completion handler (kept out of argparse / --help).
+    if argv and argv[0] == "__complete":
+        return _completion_handler(argv[1:])
+
+    if not argv:
+        build_parser().print_help()
+        return 0
+
+    # Route: a known subcommand or -V/-h go through the full parser; anything
+    # else is treated as the default `extract <path>` action.
+    known = set(_SUBCOMMANDS) | {"extract", "-V", "--version", "-h", "--help"}
+    first = argv[0]
+    try:
+        if first in known:
+            parser = build_parser()
+            args = parser.parse_args(argv)
+            if not getattr(args, "func", None):
+                parser.print_help()
+                return 0
+        else:
+            args = _build_default_extract_parser().parse_args(argv)
+        return args.func(args) or 0
+    except ExtractError as e:
+        _eprint(_red("error:") + f" {e}")
+        return 2
+    except BrokenPipeError:  # e.g. `extract foo.md | head`
+        try:
+            sys.stdout.close()
+        except Exception:
+            pass
+        return 0
+    except KeyboardInterrupt:  # pragma: no cover
+        _eprint("interrupted")
+        return 130
+
+
+if __name__ == "__main__":
+    sys.exit(main())
