@@ -950,6 +950,39 @@ def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[st
         return "", warnings
 
 
+def _docx_paragraph_style(ppr: Any, w: str) -> Optional[str]:
+    if ppr is None:
+        return None
+    st = ppr.find(w + "pStyle")
+    return st.get(w + "val") if st is not None else None
+
+
+def _is_heading_style(style: Optional[str]) -> bool:
+    """True for Word built-in heading/title styles (Heading1-9, Title, and the
+    'H1'/'H2' shorthands). These mark clause headings whose visible numbers are
+    auto-generated and absent from the raw text."""
+    if not style:
+        return False
+    s = style.lower()
+    return "heading" in s or s == "title" or bool(re.fullmatch(r"h[1-9]", s))
+
+
+def _docx_heading_title(text: str) -> Optional[str]:
+    """Pull the clause title out of a heading paragraph. Many contracts use a
+    run-in heading -- 'Performing Services.  Contractor will ...' -- where the
+    title is the lead before the first sentence break; a standalone header
+    ('Services & Restrictions') has no such break and is used whole.
+
+    Returns None when the paragraph is really a full sentence that merely
+    carries a heading style (no run-in title) -- those would otherwise become
+    garbage clause titles and mis-map under substring matching."""
+    m = re.match(r"\s*(.{2,80}?)[.:]\s+[A-Z(\"“]", text)
+    title = m.group(1).strip() if m else text.strip()
+    if len(title) > 70 or len(title.split()) > 9:
+        return None
+    return title
+
+
 def _read_docx_stdlib(raw: bytes) -> str:
     import io
     import zipfile
@@ -962,6 +995,7 @@ def _read_docx_stdlib(raw: bytes) -> str:
     paras: List[str] = []
     # iter over w:p in document order (includes paragraphs inside table cells).
     for p in root.iter(w + "p"):
+        style = _docx_paragraph_style(p.find(w + "pPr"), w)
         run_texts: List[str] = []
         any_text = False
         all_bold = True
@@ -978,6 +1012,17 @@ def _read_docx_stdlib(raw: bytes) -> str:
         if not line:
             paras.append("")
             continue
+        # Word heading styles carry the clause structure (their numbers are
+        # auto-generated, so absent from text). Emit them as H2 so the clause
+        # cascade's strongest tier detects them; keep any run-in body too.
+        if _is_heading_style(style):
+            title = _docx_heading_title(line)
+            if title is not None:
+                paras.append(f"## {title}")
+                if len(title) < len(line):
+                    paras.append(line[len(title):].lstrip(" .:\t"))
+                continue
+            # Sentence carrying a heading style -> treat as ordinary body text.
         if any_text and all_bold:
             line = f"**{line}**"
         paras.append(line)

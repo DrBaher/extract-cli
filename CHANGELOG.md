@@ -6,6 +6,32 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.4] - 2026-05-21
+
+DOCX clause detection, driven by testing against 20 real `.docx` contracts
+(Common Paper / Bonterms / YC templates via open-agreements, plus government
+samples) — the format we expect most.
+
+### Fixed
+- **The DOCX reader now honors Word heading styles.** Real Word contracts carry
+  their clause structure in `Heading1`–`Heading9`/`Title` paragraph styles with
+  *auto-generated* numbers (absent from the raw text), so the prior cascade
+  found almost no clauses. Heading-styled paragraphs are now emitted as `##`
+  headings (detected by the strongest tier); run-in headings
+  (`Payment.  Customer will pay …`) are split into title + body, and a full
+  sentence that merely carries a heading style is rejected (not a clause).
+  Across the 20-doc sample this took heading-styled agreements from ~0 clauses
+  to a clean 14–21 distinct suite-vocabulary clauses each.
+- Binary DOCX test fixtures are now generated deterministically (fixed zip
+  timestamp) so their sha256 — and the goldens — are stable across regenerations.
+
+### Known limitations (documented)
+- DOCX that auto-number clauses via `numbering.xml` with **no heading style and
+  no bold lead** (some Bonterms/older templates use a flat `Plain`/`ListParagraph`
+  style) still yield no clause map: the heading text carries no detectable
+  signal without reconstructing Word's numbering counters. Parties/dates/
+  governing-law still extract.
+
 ## [0.1.3] - 2026-05-21
 
 Clause-map de-noising and party cleanup, driven by testing against 10 more
@@ -140,6 +166,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.4]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.4
 [0.1.3]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.3
 [0.1.2]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.2
 [0.1.1]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.1

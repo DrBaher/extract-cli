@@ -42,14 +42,36 @@ _DOCX_PARAS = [
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
 
-def _docx_paragraph(text: str, bold: bool) -> str:
+def _docx_paragraph(text: str, bold: bool = False, style: str = "") -> str:
+    ppr = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if style else ""
     rpr = "<w:rPr><w:b/></w:rPr>" if bold else ""
-    return (f"<w:p><w:r>{rpr}"
+    return (f"<w:p>{ppr}<w:r>{rpr}"
             f'<w:t xml:space="preserve">{escape(text)}</w:t></w:r></w:p>')
 
 
-def build_docx() -> bytes:
-    body = "".join(_docx_paragraph(t, b) for t, b in _DOCX_PARAS)
+# A Word-styled agreement: clause structure carried by Heading1 styles (their
+# numbers are auto-generated, absent from text), including a run-in heading and
+# a full sentence that merely carries the heading style (must be rejected).
+_HEADING_DOCX_PARAS = [
+    ('Cloud Service Agreement', False, "Title"),
+    ('This Cloud Service Agreement is entered into as of April 4, 2024, by and '
+     'between Initech Software, Inc. (the "Provider") and Globex Corporation '
+     '(the "Customer").', False, ""),
+    ('Confidentiality', False, "Heading1"),
+    ('Each party will protect the other party’s Confidential Information.', False, ""),
+    ('Payment.  Customer will pay the fees set out in the Order Form within '
+     'thirty (30) days.', False, "Heading1"),
+    ('Term & Termination', False, "Heading1"),
+    ('The term of this Agreement is two (2) years and will automatically renew '
+     'for successive one-year terms.', False, ""),
+    ('Either party may terminate this Agreement upon material breach that '
+     'remains uncured for thirty days after written notice.', False, "Heading1"),
+    ('Governing Law', False, "Heading1"),
+    ('This Agreement is governed by the laws of the State of New York.', False, ""),
+]
+
+
+def _docx_package(body: str) -> bytes:
     document = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         f'<w:document xmlns:w="{_W}"><w:body>{body}<w:sectPr/></w:body></w:document>'
@@ -70,12 +92,27 @@ def build_docx() -> bytes:
         'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
         'Target="word/document.xml"/></Relationships>'
     )
+    # Deterministic: a fixed timestamp on every entry so regenerating the
+    # fixture produces byte-identical output (stable sha256 -> stable goldens).
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("[Content_Types].xml", content_types)
-        z.writestr("_rels/.rels", rels)
-        z.writestr("word/document.xml", document)
+        for name, data in (("[Content_Types].xml", content_types),
+                           ("_rels/.rels", rels),
+                           ("word/document.xml", document)):
+            info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            z.writestr(info, data)
     return buf.getvalue()
+
+
+def build_docx() -> bytes:
+    return _docx_package("".join(_docx_paragraph(t, b) for t, b in _DOCX_PARAS))
+
+
+def build_heading_docx() -> bytes:
+    return _docx_package(
+        "".join(_docx_paragraph(t, b, style=s) for t, b, s in _HEADING_DOCX_PARAS)
+    )
 
 
 # --- PDF: a software license with ALL-CAPS headings (Tier 3) ----------------
@@ -156,6 +193,7 @@ def build_scanned_pdf() -> bytes:
 
 _BINARY_FIXTURES = {
     "employment_docx.docx": build_docx,
+    "heading_docx.docx": build_heading_docx,
     "license_pdf.pdf": build_pdf,
     "scanned.pdf": build_scanned_pdf,
 }

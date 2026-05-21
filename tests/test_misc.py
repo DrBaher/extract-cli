@@ -142,6 +142,37 @@ def test_pdf_unescape() -> None:
     assert ex._pdf_unescape(r"\101\102") == "AB"  # octal escapes
 
 
+def test_docx_heading_style_helpers() -> None:
+    assert ex._is_heading_style("Heading1")
+    assert ex._is_heading_style("Heading 2".replace(" ", ""))
+    assert ex._is_heading_style("Title")
+    assert ex._is_heading_style("h3")
+    assert not ex._is_heading_style("Plain")
+    assert not ex._is_heading_style(None)
+    # Run-in heading: title is the lead before the sentence body.
+    assert ex._docx_heading_title("Payment.  Customer will pay the fees.") == "Payment"
+    assert ex._docx_heading_title("Governing Law") == "Governing Law"
+    # A full sentence carrying a heading style is rejected (not a clause title).
+    assert ex._docx_heading_title(
+        "Either party may terminate this Agreement upon material breach that "
+        "remains uncured for thirty days.") is None
+
+
+def test_docx_heading_styles_drive_clause_map() -> None:
+    """The Word-styled fixture's clauses come from Heading1 styles (their
+    numbers are auto-generated), detected via the H2 tier; the sentence that
+    merely carries a heading style is not a clause."""
+    raw, text, fmt, _w = ex.load_source(FIXTURES / "heading_docx.docx", prefer_optional=False)
+    result = ex.build_extraction(text, raw, fmt, "heading_docx.docx")
+    assert result["clauses"], "heading-styled docx should yield clauses"
+    canon = {c["canonical_title"] for c in result["clauses"]}
+    assert {"Confidentiality", "Payment", "Governing Law"} <= canon
+    assert all(c["tier"] == "h2" for c in result["clauses"])
+    # The full-sentence "Either party may terminate ..." must not appear.
+    assert not any("terminate this Agreement" in c["detected_title"] for c in result["clauses"])
+    assert [p["name"] for p in result["parties"]] == ["Initech Software, Inc.", "Globex Corporation"]
+
+
 def test_html_extraction() -> None:
     raw, text, fmt, _w = ex.load_source(FIXTURES / "services_html.html")
     assert fmt == "html"

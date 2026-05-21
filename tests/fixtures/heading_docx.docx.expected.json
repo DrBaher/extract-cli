@@ -1,27 +1,27 @@
 {
   "document": {
-    "title": "EMPLOYMENT AGREEMENT",
+    "title": "Cloud Service Agreement",
     "format": "docx",
-    "sha256": "f50e4b9b0cb77250280eb4c26225009de063b5f4a2318e9e53784d3730d20bd1",
-    "source_path": "employment_docx.docx"
+    "sha256": "23a3b14196cdca6b58d14c7a6836fe28ff6d2be6c2fd852badb03ab6b6e84056",
+    "source_path": "heading_docx.docx"
   },
   "parties": [
     {
-      "name": "Umbrella Corporation",
+      "name": "Initech Software, Inc.",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Employer"
+      "role": "Provider"
     },
     {
-      "name": "Jordan Rivera",
+      "name": "Globex Corporation",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Employee"
+      "role": "Customer"
     }
   ],
   "dates": {
     "effective": {
-      "value": "2024-09-09",
+      "value": "2024-04-04",
       "confidence": 0.85,
       "source": "deterministic"
     },
@@ -43,99 +43,94 @@
       "source": "deterministic"
     },
     "notice_period_days": {
-      "value": 30,
-      "confidence": 0.7,
-      "source": "deterministic"
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
     }
   },
   "governing_law": {
-    "value": "Commonwealth of Massachusetts",
+    "value": "State of New York",
     "confidence": 0.85,
     "source": "deterministic"
   },
   "clauses": [
     {
-      "canonical_title": "Position And Duties",
-      "detected_title": "**1. Position and Duties**",
-      "tier": "bold-numbered",
+      "canonical_title": "Cloud Service Agreement",
+      "detected_title": "## Cloud Service Agreement",
+      "tier": "h2",
       "span": {
-        "start": 206,
-        "end": 353
+        "start": 0,
+        "end": 191
       },
-      "confidence": 0.64,
+      "confidence": 0.71,
       "source": "deterministic",
       "mapped": false
     },
     {
-      "canonical_title": "Payment",
-      "detected_title": "**2. Compensation**",
-      "tier": "bold-numbered",
+      "canonical_title": "Confidentiality",
+      "detected_title": "## Confidentiality",
+      "tier": "h2",
       "span": {
-        "start": 353,
-        "end": 516
+        "start": 191,
+        "end": 280
       },
-      "confidence": 0.85,
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Payment",
+      "detected_title": "## Payment",
+      "tier": "h2",
+      "span": {
+        "start": 280,
+        "end": 371
+      },
+      "confidence": 0.95,
       "source": "deterministic",
       "mapped": true
     },
     {
       "canonical_title": "Termination",
-      "detected_title": "**3. Term and Termination**",
-      "tier": "bold-numbered",
+      "detected_title": "## Term & Termination",
+      "tier": "h2",
       "span": {
-        "start": 516,
-        "end": 752
+        "start": 371,
+        "end": 622
       },
-      "confidence": 0.85,
-      "source": "deterministic",
-      "mapped": true
-    },
-    {
-      "canonical_title": "Confidentiality",
-      "detected_title": "**4. Confidentiality**",
-      "tier": "bold-numbered",
-      "span": {
-        "start": 752,
-        "end": 892
-      },
-      "confidence": 0.85,
+      "confidence": 0.95,
       "source": "deterministic",
       "mapped": true
     },
     {
       "canonical_title": "Governing Law",
-      "detected_title": "**5. Governing Law**",
-      "tier": "bold-numbered",
+      "detected_title": "## Governing Law",
+      "tier": "h2",
       "span": {
-        "start": 892,
-        "end": 1029
+        "start": 622,
+        "end": 704
       },
-      "confidence": 0.85,
+      "confidence": 0.95,
       "source": "deterministic",
       "mapped": true
     }
   ],
   "defined_terms": [
     {
-      "term": "Agreement",
+      "term": "Provider",
       "confidence": 0.6,
       "source": "deterministic"
     },
     {
-      "term": "Employer",
-      "confidence": 0.6,
-      "source": "deterministic"
-    },
-    {
-      "term": "Employee",
+      "term": "Customer",
       "confidence": 0.6,
       "source": "deterministic"
     }
   ],
   "value": {
-    "value": "$185,000",
-    "confidence": 0.6,
-    "source": "deterministic"
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
   },
   "_meta": {
     "extractor_version": "0.1.3",
