@@ -43,11 +43,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.3"
+EXTRACTOR_VERSION = "0.1.4"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
