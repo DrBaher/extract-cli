@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "extract-cli"
+version = "0.1.0"
+description = "Open-loop front door of the contract-ops CLI suite: ingest any contract (.md/.txt/.docx/.pdf) and emit structured JSON."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "DrBaher", email = "Drbaher@gmail.com" }]
+keywords = ["contract", "extraction", "nda", "legal", "cli", "json", "clause"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Legal Industry",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Text Processing :: Markup",
+    "Typing :: Typed",
+]
+# Stdlib-only core: zero runtime dependencies. The tool is fully functional on
+# .md/.txt (and best-effort on .docx/.pdf) with nothing installed.
+dependencies = []
+
+[project.optional-dependencies]
+# Higher-fidelity DOCX extraction (tables, complex formatting). A stdlib
+# zipfile/XML reader is used when this is absent.
+docx = ["python-docx>=0.8.11"]
+# Higher-fidelity PDF text extraction. A stdlib best-effort reader is used when
+# this is absent.
+pdf = ["pypdf>=3.9.0"]
+# Opt-in LLM enrichment uses only stdlib urllib, so no runtime dep is required;
+# this marker exists for parity with the suite and future provider SDKs.
+llm = []
+# Dev/test/CI toolchain.
+dev = [
+    "pytest>=7.0",
+    "coverage>=7.0",
+    "mypy>=1.0",
+    "build>=1.0",
+]
+
+[project.urls]
+Homepage = "https://cli.drbaher.com/"
+Repository = "https://github.com/DrBaher/extract-cli"
+"Suite interop" = "https://github.com/DrBaher/extract-cli/blob/main/docs/INTEROP.md"
+
+[project.scripts]
+extract = "extract_cli:main"
+
+[tool.hatch.build.targets.wheel]
+include = ["extract_cli.py"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "extract_cli.py",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "ARCHITECTURE.md",
+    "CONTRIBUTING.md",
+    "Makefile",
+    "docs/",
+    "config/",
+    "scripts/",
+    "tests/",
+]
+
+[tool.mypy]
+strict = true
+# Lowest analysis target mypy 2.x accepts; the source itself stays 3.9-compatible
+# (PEP 563 future-annotations + typing.Dict/List/Optional/Tuple, no 3.10+ syntax).
+python_version = "3.10"
+files = ["extract_cli.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
