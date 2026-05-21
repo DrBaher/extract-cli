@@ -1,0 +1,57 @@
+{
+  "document": {
+    "title": "Scanned",
+    "format": "pdf",
+    "sha256": "a3743388a63b7cba33cba26b7b3cd56b8ffbe0a208349b7d68110f39511a3ea9",
+    "source_path": "scanned.pdf"
+  },
+  "parties": [],
+  "dates": {
+    "effective": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "auto_renew": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "notice_period_days": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "governing_law": {
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
+  },
+  "clauses": [],
+  "defined_terms": [],
+  "value": {
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

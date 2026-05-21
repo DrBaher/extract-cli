@@ -1,0 +1,142 @@
+{
+  "document": {
+    "title": "MASTER SERVICES AGREEMENT",
+    "format": "text",
+    "sha256": "a1e1bfbb11338610672bf13a64a33bde02e270dde2fff08d67b0df84f0d1578e",
+    "source_path": "services_bold.txt"
+  },
+  "parties": [
+    {
+      "name": "Globex Corporation",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Provider"
+    },
+    {
+      "name": "Initech Industries",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Customer"
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2024-03-04",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": "3 years",
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "auto_renew": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "notice_period_days": {
+      "value": 30,
+      "confidence": 0.7,
+      "source": "deterministic"
+    }
+  },
+  "governing_law": {
+    "value": "State of California",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Scope Of Services",
+      "detected_title": "**1. Scope of Services**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 182,
+        "end": 282
+      },
+      "confidence": 0.64,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Payment",
+      "detected_title": "**2. Fees and Payment**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 282,
+        "end": 440
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Termination",
+      "detected_title": "**3. Term and Termination**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 440,
+        "end": 607
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Limitation of Liability",
+      "detected_title": "**4. Limitation of Liability**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 607,
+        "end": 730
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "**5. Governing Law**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 730,
+        "end": 825
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Provider",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Customer",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": "$250,000",
+    "confidence": 0.6,
+    "source": "deterministic"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

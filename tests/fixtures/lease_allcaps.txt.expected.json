@@ -1,0 +1,142 @@
+{
+  "document": {
+    "title": "COMMERCIAL LEASE AGREEMENT",
+    "format": "text",
+    "sha256": "759586b42a87c28c0a7df1f6bf6000b1eb068788be0b021d660fdf04f46c1caa",
+    "source_path": "lease_allcaps.txt"
+  },
+  "parties": [
+    {
+      "name": "Wayne Enterprises",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Landlord"
+    },
+    {
+      "name": "Stark Industries",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Tenant"
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2023-06-01",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": "5 years",
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "auto_renew": {
+      "value": false,
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "notice_period_days": {
+      "value": 60,
+      "confidence": 0.7,
+      "source": "deterministic"
+    }
+  },
+  "governing_law": {
+    "value": "State of Illinois",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Premises",
+      "detected_title": "PREMISES",
+      "tier": "all-caps",
+      "span": {
+        "start": 176,
+        "end": 253
+      },
+      "confidence": 0.56,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Term",
+      "detected_title": "TERM",
+      "tier": "all-caps",
+      "span": {
+        "start": 255,
+        "end": 377
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Rent",
+      "detected_title": "RENT",
+      "tier": "all-caps",
+      "span": {
+        "start": 379,
+        "end": 464
+      },
+      "confidence": 0.56,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Notices",
+      "detected_title": "NOTICES",
+      "tier": "all-caps",
+      "span": {
+        "start": 466,
+        "end": 555
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "GOVERNING LAW",
+      "tier": "all-caps",
+      "span": {
+        "start": 557,
+        "end": 639
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Landlord",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Tenant",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": "$120,000",
+    "confidence": 0.6,
+    "source": "deterministic"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

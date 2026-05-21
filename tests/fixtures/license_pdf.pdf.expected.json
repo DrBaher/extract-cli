@@ -1,0 +1,142 @@
+{
+  "document": {
+    "title": "SOFTWARE LICENSE AGREEMENT",
+    "format": "pdf",
+    "sha256": "1e52dbc1b4fc7bead9a802e01c697f7bb300e6d9c66bea2f3a64c3b59087ef7f",
+    "source_path": "license_pdf.pdf"
+  },
+  "parties": [
+    {
+      "name": "Cyberdyne Systems Corp.",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Licensor"
+    },
+    {
+      "name": "Tyrell Corporation",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Licensee"
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2025-02-02",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": "4 years",
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "auto_renew": {
+      "value": false,
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "notice_period_days": {
+      "value": 5,
+      "confidence": 0.7,
+      "source": "deterministic"
+    }
+  },
+  "governing_law": {
+    "value": "State of Washington",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Grant Of License",
+      "detected_title": "GRANT OF LICENSE",
+      "tier": "all-caps",
+      "span": {
+        "start": 190,
+        "end": 295
+      },
+      "confidence": 0.56,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "License Fees",
+      "detected_title": "LICENSE FEES",
+      "tier": "all-caps",
+      "span": {
+        "start": 297,
+        "end": 373
+      },
+      "confidence": 0.56,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Term",
+      "detected_title": "TERM",
+      "tier": "all-caps",
+      "span": {
+        "start": 375,
+        "end": 496
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Termination",
+      "detected_title": "TERMINATION",
+      "tier": "all-caps",
+      "span": {
+        "start": 498,
+        "end": 580
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "GOVERNING LAW",
+      "tier": "all-caps",
+      "span": {
+        "start": 582,
+        "end": 670
+      },
+      "confidence": 0.75,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Licensor",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Licensee",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": "$75,000",
+    "confidence": 0.6,
+    "source": "deterministic"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

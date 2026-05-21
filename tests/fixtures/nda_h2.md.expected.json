@@ -1,0 +1,147 @@
+{
+  "document": {
+    "title": "Mutual Non-Disclosure Agreement",
+    "format": "markdown",
+    "sha256": "18ee29be8f2b44b6cb3ae946da91fd30a83f185d45ce42cac138339fdb74c37d",
+    "source_path": "nda_h2.md"
+  },
+  "parties": [
+    {
+      "name": "Northwind Traders, Inc.",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Disclosing Party"
+    },
+    {
+      "name": "Contoso Analytics LLC",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Receiving Party"
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2025-01-15",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": "2 years",
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "auto_renew": {
+      "value": true,
+      "confidence": 0.65,
+      "source": "deterministic"
+    },
+    "notice_period_days": {
+      "value": 90,
+      "confidence": 0.7,
+      "source": "deterministic"
+    }
+  },
+  "governing_law": {
+    "value": "State of New York",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Definitions",
+      "detected_title": "## Definitions",
+      "tier": "h2",
+      "span": {
+        "start": 246,
+        "end": 411
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Confidentiality",
+      "detected_title": "## Confidentiality Obligations",
+      "tier": "h2",
+      "span": {
+        "start": 411,
+        "end": 601
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Term",
+      "detected_title": "## Term",
+      "tier": "h2",
+      "span": {
+        "start": 601,
+        "end": 841
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Indemnification",
+      "detected_title": "## Indemnification",
+      "tier": "h2",
+      "span": {
+        "start": 841,
+        "end": 975
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "## Governing Law",
+      "tier": "h2",
+      "span": {
+        "start": 975,
+        "end": 1097
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Agreement",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Receiving Party",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Confidential Information",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "document": {
+    "title": "EMPLOYMENT AGREEMENT",
+    "format": "docx",
+    "sha256": "1ba94a7bfd5a32a6d080cc6704cefb786e26dc16a8985857d562182da5f7298f",
+    "source_path": "employment_docx.docx"
+  },
+  "parties": [
+    {
+      "name": "Umbrella Corporation",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Employer"
+    },
+    {
+      "name": "Jordan Rivera",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Employee"
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2024-09-09",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": "2 years",
+      "confidence": 0.7,
+      "source": "deterministic"
+    },
+    "auto_renew": {
+      "value": true,
+      "confidence": 0.65,
+      "source": "deterministic"
+    },
+    "notice_period_days": {
+      "value": 30,
+      "confidence": 0.7,
+      "source": "deterministic"
+    }
+  },
+  "governing_law": {
+    "value": "Commonwealth of Massachusetts",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Position And Duties",
+      "detected_title": "**1. Position and Duties**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 206,
+        "end": 353
+      },
+      "confidence": 0.64,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Payment",
+      "detected_title": "**2. Compensation**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 353,
+        "end": 516
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Termination",
+      "detected_title": "**3. Term and Termination**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 516,
+        "end": 752
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Confidentiality",
+      "detected_title": "**4. Confidentiality**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 752,
+        "end": 892
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "**5. Governing Law**",
+      "tier": "bold-numbered",
+      "span": {
+        "start": 892,
+        "end": 1029
+      },
+      "confidence": 0.85,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Agreement",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Employer",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Employee",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": "$185,000",
+    "confidence": 0.6,
+    "source": "deterministic"
+  },
+  "_meta": {
+    "extractor_version": "0.1.0",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

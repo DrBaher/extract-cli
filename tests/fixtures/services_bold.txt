@@ -1,0 +1,27 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement is made and entered into on 03/04/2024 by and
+between Globex Corporation ("Provider") and Initech Industries ("Customer").
+
+**1. Scope of Services**
+
+Provider shall perform the services described in each Statement of Work.
+
+**2. Fees and Payment**
+
+Customer shall pay Provider the fees set forth in the applicable Statement of
+Work. Total contract value shall not exceed $250,000.
+
+**3. Term and Termination**
+
+The initial term of this Agreement is three (3) years. Either party may
+terminate for convenience upon thirty (30) days' written notice.
+
+**4. Limitation of Liability**
+
+Provider's aggregate liability shall not exceed the fees paid in the prior
+twelve months.
+
+**5. Governing Law**
+
+This Agreement shall be governed by the laws of the State of California.

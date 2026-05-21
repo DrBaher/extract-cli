@@ -1,0 +1,90 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 926 >>
+stream
+BT
+/F1 11 Tf
+14 TL
+72 760 Td
+(SOFTWARE LICENSE AGREEMENT) Tj
+T*
+() Tj
+T*
+(This Software License Agreement is entered into as of February 2, 2025, by and) Tj
+T*
+(between Cyberdyne Systems Corp. \("Licensor"\) and Tyrell Corporation \("Licensee"\).) Tj
+T*
+() Tj
+T*
+(GRANT OF LICENSE) Tj
+T*
+() Tj
+T*
+(Licensor grants Licensee a non-exclusive, non-transferable license to use the) Tj
+T*
+(Software.) Tj
+T*
+() Tj
+T*
+(LICENSE FEES) Tj
+T*
+() Tj
+T*
+(Licensee shall pay Licensor a one-time license fee of $75,000.) Tj
+T*
+() Tj
+T*
+(TERM) Tj
+T*
+() Tj
+T*
+(This Agreement shall remain in effect for a period of four \(4\) years. This) Tj
+T*
+(Agreement shall not automatically renew.) Tj
+T*
+() Tj
+T*
+(TERMINATION) Tj
+T*
+() Tj
+T*
+(Either party may terminate upon forty-five \(45\) days' written notice.) Tj
+T*
+() Tj
+T*
+(GOVERNING LAW) Tj
+T*
+() Tj
+T*
+(This Agreement shall be governed by the laws of the State of Washington.) Tj
+T*
+() Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001218 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1288
+%%EOF
