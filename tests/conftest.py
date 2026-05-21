@@ -26,6 +26,7 @@ CORPUS: Tuple[Tuple[str, str, str], ...] = (
     ("lease_allcaps.txt", "all-caps", "text"),
     ("employment_docx.docx", "bold-numbered", "docx"),
     ("license_pdf.pdf", "all-caps", "pdf"),
+    ("services_html.html", "numbered", "html"),
 )
 
 

@@ -6,6 +6,39 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.2] - 2026-05-21
+
+More real-world hardening, driven by testing against five additional contracts
+(SEC EDGAR consulting/MSA, lease, and Visteon services agreements; Common Paper
+and Perigon Cloud Service Agreements).
+
+### Added
+- **HTML input** (`.html`/`.htm`, and HTML auto-detected inside `.txt` such as
+  SEC EDGAR full submissions). Stdlib `html.parser`-based reader strips
+  script/style, frames block elements so heading detection still works, and
+  unescapes entities. `document.format` enum gains `html` (backward-compatible
+  widening). This turns the large class of HTML contracts (SEC exhibits, web
+  ToS) from garbage into structured output.
+
+### Fixed
+- **Field extraction now runs on whitespace-flattened text**, so values that
+  wrap across a line break are matched whole — e.g. governing law
+  `the laws of the Province\nof Ontario` now yields `Province of Ontario`, and
+  line-wrapped party names/defined terms are captured.
+- **Party extraction** (continues issue #2): names are trimmed of trailing
+  descriptors (`, a Delaware corporation`, `doing business as …`,
+  `having its offices at …`, `as of …`), and each party must begin with a
+  capital so an `and` *inside* a party's own description no longer splits the
+  parties (`…V6E 3S7 and doing business as …` → real parties recovered).
+
+### Known limitations (documented, not bugs)
+- The stdlib PDF reader cannot decode PDFs that use embedded subset fonts with
+  hex-encoded glyph strings (common in professionally-typeset PDFs); these
+  degrade gracefully to a low-signal warning. Install the `[pdf]` extra (pypdf)
+  for them — verified to recover full text and clause structure.
+- Two-line `ARTICLE N` / title headings (number on one line, title on the next)
+  are not yet detected.
+
 ## [0.1.1] - 2026-05-21
 
 Real-world hardening, driven by testing against a SEC EDGAR employment
@@ -82,5 +115,6 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.2]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.2
 [0.1.1]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.1
 [0.1.0]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.0

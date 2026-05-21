@@ -142,6 +142,32 @@ def test_pdf_unescape() -> None:
     assert ex._pdf_unescape(r"\101\102") == "AB"  # octal escapes
 
 
+def test_html_extraction() -> None:
+    raw, text, fmt, _w = ex.load_source(FIXTURES / "services_html.html")
+    assert fmt == "html"
+    # script/style content is dropped; entities are unescaped.
+    assert "this should never appear" not in text
+    result = ex.build_extraction(text, raw, fmt, "services_html.html")
+    assert result["document"]["format"] == "html"
+    assert [p["name"] for p in result["parties"]] == ["Initrode Systems, Inc.", "Hooli LLC"]
+    assert result["governing_law"]["value"] == "State of California"
+    assert result["dates"]["effective"]["value"] == "2023-03-15"
+    canon = {c["canonical_title"] for c in result["clauses"]}
+    assert {"Payment", "Termination", "Confidentiality", "Governing Law"} <= canon
+
+
+def test_html_detected_by_content_sniff(tmp_path: Any) -> None:
+    # HTML masquerading as .txt (e.g. a SEC EDGAR full submission) is sniffed.
+    p = tmp_path / "exhibit.txt"
+    p.write_text("<html><body><p>between A Co and B Co</p></body></html>")
+    _raw, _text, fmt, _w = ex.load_source(p)
+    assert fmt == "html"
+
+
+def test_html_malformed_does_not_crash() -> None:
+    assert ex._read_html("<p>unclosed <b>bold <div>text") is not None
+
+
 def test_pdf_text_only_inside_bt_et() -> None:
     # Strings outside BT/ET (font/signature/metadata stream bytes that happen to
     # contain parentheses) must be ignored; only text objects yield text.

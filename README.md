@@ -25,8 +25,8 @@ ingest (extract) → review → diff → convert → sign
 
 ## What it does
 
-Give it a contract in **`.md` / `.txt`** (native), **`.docx`**, or **`.pdf`**,
-and it returns structured JSON: the parties, dates, term, governing law, a
+Give it a contract in **`.md` / `.txt` / `.html`** (native), **`.docx`**, or
+**`.pdf`**, and it returns structured JSON: the parties, dates, term, governing law, a
 **clause map** normalized onto the suite's canonical clause vocabulary, a
 defined-term inventory, and a headline value. Every field carries a
 `confidence` and a `source` so downstream tools **verify, don't trust**.
@@ -37,14 +37,15 @@ daemon, no network in the default path.
 ## Install
 
 ```bash
-pip install extract-cli                 # core: .md/.txt + best-effort .docx/.pdf
+pip install extract-cli                 # core: .md/.txt/.html + best-effort .docx/.pdf
 pip install "extract-cli[docx]"         # higher-fidelity .docx (python-docx)
 pip install "extract-cli[pdf]"          # higher-fidelity .pdf (pypdf)
 pip install "extract-cli[docx,pdf]"     # both
 ```
 
-The core has **zero runtime dependencies** and is fully functional on `.md`/`.txt`
-with no extras. `.docx` and `.pdf` work out of the box via stdlib readers; the
+The core has **zero runtime dependencies** and is fully functional on
+`.md`/`.txt`/`.html` with no extras (HTML is also auto-detected when it hides
+inside a `.txt`, e.g. SEC EDGAR filings). `.docx` and `.pdf` work out of the box via stdlib readers; the
 `[docx]`/`[pdf]` extras improve fidelity on complex documents (see
 [ARCHITECTURE.md](ARCHITECTURE.md)).
 

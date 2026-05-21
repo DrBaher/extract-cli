@@ -12,14 +12,38 @@ def test_parties_between_simple() -> None:
     assert all(0.0 <= p["confidence"] <= 1.0 for p in parties)
 
 
-def test_parties_with_roles_and_linebreak() -> None:
-    text = ('by and between Acme Corp. (the "Disclosing\nParty") and '
+def test_parties_with_roles() -> None:
+    text = ('by and between Acme Corp. (the "Disclosing Party") and '
             'Beta LLC (the "Receiving Party"), dated March 1, 2024.')
     parties = ex.extract_parties(text)
     assert parties[0]["name"] == "Acme Corp."
     assert parties[0]["role"] == "Disclosing Party"
     assert parties[1]["name"] == "Beta LLC"
     assert parties[1]["role"] == "Receiving Party"
+
+
+def test_parties_linebreak_handled_by_build() -> None:
+    # build_extraction flattens whitespace, so a party/role that wraps across a
+    # line is matched whole.
+    text = ('This Agreement is made by and between Acme Corp. (the "Disclosing\n'
+            'Party") and Beta LLC (the "Receiving Party").')
+    r = ex.build_extraction(text, text.encode("utf-8"), "text", "x.txt")
+    assert [p["name"] for p in r["parties"]] == ["Acme Corp.", "Beta LLC"]
+    assert r["parties"][0]["role"] == "Disclosing Party"
+
+
+def test_parties_skip_and_inside_description() -> None:
+    # An "and" inside a party's own description must not split the parties.
+    text = ("between Blade Ventures Inc., a Nevada corporation having offices at "
+            "1 Main St and doing business as Foo (\"Client\"), and KPMG LP")
+    parties = ex.extract_parties(text)
+    assert [p["name"] for p in parties] == ["Blade Ventures Inc.", "KPMG LP"]
+
+
+def test_party_name_descriptors_trimmed() -> None:
+    assert ex._clean_party_name("Visteon Corporation, a Delaware corporation") == "Visteon Corporation"
+    assert ex._clean_party_name("Foo Inc. doing business as Bar") == "Foo Inc."
+    assert ex._clean_party_name("Baz LLC having its principal office at X") == "Baz LLC"
 
 
 def test_parties_none() -> None:
@@ -78,6 +102,15 @@ def test_governing_law_stops_before_trailing_clause() -> None:
         "Delaware, without regard to its conflict-of-laws principles."
     )
     assert out["value"] == "State of Delaware"
+
+
+def test_governing_law_linebreak_handled_by_build() -> None:
+    # A jurisdiction that wraps a line ("...the Province\nof Ontario") is
+    # matched whole because build_extraction flattens whitespace first.
+    text = ("This Agreement shall be governed by the laws of the Province\n"
+            "of Ontario and the federal laws of Canada.")
+    r = ex.build_extraction(text, text.encode("utf-8"), "text", "x.txt")
+    assert r["governing_law"]["value"] == "Province of Ontario"
 
 
 def test_governing_law_missing() -> None:

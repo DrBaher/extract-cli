@@ -4,8 +4,8 @@
 The suite is a contract lifecycle (store -> draft -> review -> diff -> convert
 -> sign) that, until now, only handled documents it authored from its own
 templates. `extract-cli` is "passport control": it ingests ANY document --
-yours or a counterparty's foreign paper -- in .md/.txt (natively), .docx, or
-.pdf, and emits a structured JSON representation that the rest of the suite
+yours or a counterparty's foreign paper -- in .md/.txt/.html (natively), .docx,
+or .pdf, and emits a structured JSON representation that the rest of the suite
 (nda-review-cli, compare-cli, contract-vault) consumes.
 
 Two extraction tiers:
@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import hashlib
+import html.parser
 import importlib.util
 import json
 import os
@@ -492,10 +493,17 @@ _EXPIRE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Each party must start with a capital letter (optionally "the X"), a quote, or
+# a paren. This is case-sensitive on purpose (no global IGNORECASE -- only the
+# keywords are): it lets the engine skip an "and" that sits INSIDE a party's own
+# description ("...V6E 3S7 and doing business as ...", where the right side
+# starts lowercase) and find the real "and" before the second named entity.
+_PARTY_START = r"(?:(?:[Tt]he|its)\s+)?[A-Z\"“(]"
 _PARTY_BLOCK_RE = re.compile(
-    r"\b(?:by\s+and\s+between|between)\s+(.{2,200}?)\s+\band\b\s+(.{2,200}?)"
-    r"(?=[\.;\n]|\bwhereas\b|\beffective\b|\bdated\b|\bhaving\b|\bwith\s+offices\b|$)",
-    re.IGNORECASE | re.DOTALL,
+    r"(?i:\b(?:by\s+and\s+between|between)\s+)"
+    r"(" + _PARTY_START + r"[^\n]{1,200}?)\s+and\s+"
+    r"(" + _PARTY_START + r"[^\n]{1,200}?)"
+    r"(?=[\.;\n]|(?i:\bwhereas\b|\beffective\b|\bdated\b|\bas\s+of\b|\bwitnesseth\b)|$)",
 )
 _ROLE_PAREN_RE = re.compile(
     r"\(\s*(?:the\s+)?[\"“]?([^\"”()]+?)[\"”]?\s*\)"
@@ -604,8 +612,40 @@ def _date_field(match: Optional["re.Match[str]"]) -> JSON:
     return _date_field_from_str(match.group(1), 0.85)
 
 
+# Trailing descriptors that follow a party's actual name and should be dropped
+# ("Acme Corp., a Delaware corporation", "... doing business as Foo", "... as of
+# March 1", "... having its offices at ..."). Each is matched and everything from
+# it onward is cut.
+_PARTY_CUT_MARKERS: Tuple[str, ...] = (
+    r",\s+an?\s+\w",                                  # ", a Delaware ..." / ", an Ohio ..."
+    r"\s+doing\s+business\s+as\b",
+    r"\s+d/?b/?a\b",
+    r"\s+f/?k/?a\b",
+    r"\s+a[n]?\s+\w+\s+(?:corporation|company|partnership|limited)\b",
+    r"\s+having\b",
+    r"\s+with\s+(?:its\s+)?(?:offices|principal|a\s)\b",
+    r"\s+with\s+offices\b",
+    r"\s+located\b",
+    r"\s+organized\b",
+    r"\s+incorporated\b",
+    r"\s+whose\b",
+    r"\s+(?:as\s+of|dated|effective)\b",
+)
+
+
+def _clean_party_name(s: str) -> str:
+    """Trim a captured party name down to the entity name, dropping trailing
+    descriptors ('a Delaware corporation', 'd/b/a ...', 'as of ...')."""
+    s = re.sub(r"\s+", " ", s).strip().strip(",").strip()
+    for pat in _PARTY_CUT_MARKERS:
+        m = re.search(pat, s, re.IGNORECASE)
+        if m:
+            s = s[: m.start()].strip().strip(",").strip()
+    return s.strip("\"“”").strip()
+
+
 def _split_name_role(s: str) -> Tuple[str, Optional[str]]:
-    s = s.strip().strip(",").strip()
+    s = re.sub(r"\s+", " ", s).strip().strip(",").strip()
     role: Optional[str] = None
     m = _ROLE_PAREN_RE.search(s)
     if m:
@@ -614,9 +654,7 @@ def _split_name_role(s: str) -> Tuple[str, Optional[str]]:
         if len(candidate) <= 40 and candidate.lower() not in ("a", "an", "the"):
             role = candidate
         s = (s[: m.start()] + s[m.end():]).strip().rstrip(",").strip()
-    s = s.strip("\"“”").strip()
-    s = re.sub(r"\s+", " ", s)
-    return s, role
+    return _clean_party_name(s), role
 
 
 def extract_parties(text: str) -> List[JSON]:
@@ -625,9 +663,6 @@ def extract_parties(text: str) -> List[JSON]:
         return []
     out: List[JSON] = []
     for raw in (m.group(1), m.group(2)):
-        # Party names can wrap across lines ("...(the \"Disclosing\nParty\")");
-        # collapse whitespace rather than truncating at the first newline.
-        raw = re.sub(r"\s+", " ", raw).strip()
         name, role = _split_name_role(raw)
         if not name or len(name) < 2 or len(name) > 120:
             continue
@@ -750,21 +785,91 @@ def extract_title(text: str, path: Optional[Path], fmt: str) -> Optional[str]:
 # ---------------------------------------------------------------------------
 
 
+def _looks_like_html(head: str) -> bool:
+    """Heuristic: does this text look like HTML? Catches HTML masquerading as
+    .txt (e.g. SEC EDGAR full submissions wrap HTML exhibits in a .txt)."""
+    low = head.lower()
+    if "<!doctype html" in low or "<html" in low or "<body" in low:
+        return True
+    return len(re.findall(r"</?(?:p|div|table|tr|td|span|br|h[1-6]|font|b|i)\b", low)) >= 6
+
+
 def _detect_format(path: Path, raw: bytes) -> str:
     ext = path.suffix.lower()
-    if ext in (".md", ".markdown"):
-        return "markdown"
-    if ext == ".txt":
-        return "text"
+    if ext in (".htm", ".html", ".xhtml"):
+        return "html"
     if ext == ".docx":
         return "docx"
     if ext == ".pdf":
         return "pdf"
     if raw[:4] == b"%PDF":
         return "pdf"
-    if raw[:2] == b"PK":
+    if raw[:2] == b"PK" and ext not in (".md", ".markdown", ".txt"):
         return "docx"
-    return "text"
+    base = "markdown" if ext in (".md", ".markdown") else "text"
+    # Content sniff: HTML hiding inside a .txt/.md (or extensionless) file.
+    if _looks_like_html(raw[:4096].decode("utf-8", "replace")):
+        return "html"
+    return base
+
+
+class _HTMLTextExtractor(html.parser.HTMLParser):
+    """Stdlib HTML -> text: drops script/style, frames block elements with blank
+    lines (so clause-heading detection still works), and unescapes entities."""
+
+    _SKIP = {"script", "style", "head", "title", "meta", "link", "noscript"}
+    _BLOCK = {
+        "p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6",
+        "section", "article", "table", "ul", "ol", "blockquote", "pre", "hr",
+        "thead", "tbody", "header", "footer", "main",
+    }
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._parts: List[str] = []
+        self._skip = 0
+
+    def handle_starttag(self, tag: str, attrs: Any) -> None:
+        if tag in self._SKIP:
+            self._skip += 1
+        elif tag in self._BLOCK:
+            self._parts.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self._SKIP and self._skip > 0:
+            self._skip -= 1
+        elif tag in self._BLOCK:
+            self._parts.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if self._skip == 0:
+            self._parts.append(data)
+
+    def get_text(self) -> str:
+        # Strip each line; collapse runs of blank lines to a single blank line
+        # (gives ALL-CAPS / numbered headings their blank-line frame).
+        lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in "".join(self._parts).split("\n")]
+        out: List[str] = []
+        blank = False
+        for ln in lines:
+            if ln:
+                out.append(ln)
+                blank = False
+            elif not blank:
+                out.append("")
+                blank = True
+        return "\n".join(out).strip()
+
+
+def _read_html(raw_text: str) -> str:
+    parser = _HTMLTextExtractor()
+    try:
+        parser.feed(raw_text)
+        parser.close()
+    except Exception:
+        # Never crash on malformed markup; fall back to a crude tag strip.
+        return re.sub(r"<[^>]+>", " ", raw_text)
+    return parser.get_text()
 
 
 def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str, List[str]]:
@@ -986,6 +1091,8 @@ def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, s
     warnings: List[str] = []
     if fmt in ("markdown", "text"):
         text = raw.decode("utf-8", "replace")
+    elif fmt == "html":
+        text = _read_html(raw.decode("utf-8", "replace"))
     elif fmt == "docx":
         text, w = _read_docx(path, raw, prefer_optional)
         warnings += w
@@ -1011,6 +1118,13 @@ def build_extraction(text: str, raw: bytes, fmt: str,
                      source_path: Optional[str]) -> JSON:
     """Run the deterministic tier and assemble the output contract object."""
     sha = hashlib.sha256(raw).hexdigest()
+    # Field extractors (parties, dates, governing law, term, value, defined
+    # terms) run on a whitespace-flattened copy so values that wrap across a
+    # line break in the source -- "...laws of the Province\nof Ontario", a party
+    # name split mid-line -- are matched whole. Clause detection and the title
+    # keep the original text, which depends on line structure.
+    flat = re.sub(r"[ \t\r\f\v]*\n[ \t\r\f\v]*", " ", text)
+    flat = re.sub(r"[ \t]+", " ", flat)
     return {
         "document": {
             "title": extract_title(text, Path(source_path) if source_path else None, fmt),
@@ -1018,13 +1132,13 @@ def build_extraction(text: str, raw: bytes, fmt: str,
             "sha256": sha,
             "source_path": source_path,
         },
-        "parties": extract_parties(text),
-        "dates": extract_dates(text),
-        "term": extract_term(text),
-        "governing_law": extract_governing_law(text),
+        "parties": extract_parties(flat),
+        "dates": extract_dates(flat),
+        "term": extract_term(flat),
+        "governing_law": extract_governing_law(flat),
         "clauses": extract_clauses(text),
-        "defined_terms": extract_defined_terms(text),
-        "value": extract_value(text),
+        "defined_terms": extract_defined_terms(flat),
+        "value": extract_value(flat),
         "_meta": {
             "extractor_version": EXTRACTOR_VERSION,
             "tiers_used": ["deterministic"],
@@ -1336,7 +1450,7 @@ def output_schema() -> JSON:
                 "required": ["title", "format", "sha256", "source_path"],
                 "properties": {
                     "title": {"type": ["string", "null"]},
-                    "format": {"enum": ["markdown", "text", "docx", "pdf"]},
+                    "format": {"enum": ["markdown", "text", "docx", "pdf", "html"]},
                     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
                     "source_path": {"type": ["string", "null"]},
                 },
@@ -1687,7 +1801,7 @@ def _add_common_output_flags(p: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="extract",
-        description="Ingest any contract (.md/.txt/.docx/.pdf) and emit structured "
+        description="Ingest any contract (.md/.txt/.html/.docx/.pdf) and emit structured "
                     "JSON for the contract-ops CLI suite. See docs/INTEROP.md.",
     )
     parser.add_argument("-V", "--version", action="version",
@@ -1721,7 +1835,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _build_extract_args(p: argparse.ArgumentParser) -> None:
-    p.add_argument("path", help="Path to the document (.md/.txt/.docx/.pdf).")
+    p.add_argument("path", help="Path to the document (.md/.txt/.html/.docx/.pdf).")
     p.add_argument("--llm", action="store_true",
                    help="Opt-in LLM enrichment of fuzzy fields (renewal, obligations). "
                         "Off by default; the deterministic core is fully useful without it.")

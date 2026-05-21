@@ -8,11 +8,14 @@ map.
 ```
 load_source(path)                       extension/content sniff → reader
   ├─ .md/.txt  → utf-8 decode
+  ├─ .html     → stdlib html.parser reader (also auto-detected inside .txt)
   ├─ .docx     → python-docx (if [docx]) else stdlib zipfile/XML reader
   └─ .pdf      → pypdf (if [pdf]) else stdlib zlib + text-operator reader
         │
         ▼  (raw_bytes, text, format, warnings)
 build_extraction(text, raw, fmt, src)   the DETERMINISTIC tier (always on)
+  │  field extractors run on a whitespace-FLATTENED copy (so values that wrap
+  │  across a line are matched whole); clause detection keeps the original text
   ├─ extract_parties          "between X and Y", with role parentheticals
   ├─ extract_dates            effective / expiration, ISO-normalized
   ├─ extract_term             length / auto_renew / notice_period_days

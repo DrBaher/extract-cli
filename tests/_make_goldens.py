@@ -20,7 +20,8 @@ from tests._fixtures_build import ensure_binary_fixtures  # noqa: E402
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 DOCS = ["nda_h2.md", "services_bold.txt", "lease_allcaps.txt",
-        "employment_docx.docx", "license_pdf.pdf", "scanned.pdf"]
+        "employment_docx.docx", "license_pdf.pdf", "services_html.html",
+        "scanned.pdf"]
 
 
 def golden_for(name: str) -> dict:

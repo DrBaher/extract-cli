@@ -1,28 +1,28 @@
 {
   "document": {
-    "title": "Mutual Non-Disclosure Agreement",
-    "format": "markdown",
-    "sha256": "18ee29be8f2b44b6cb3ae946da91fd30a83f185d45ce42cac138339fdb74c37d",
-    "source_path": "nda_h2.md"
+    "title": "MASTER SERVICES AGREEMENT",
+    "format": "html",
+    "sha256": "088b40f13135e6b5d8f8548b162d657f10725d348388c7c3a416d11d7fc65300",
+    "source_path": "services_html.html"
   },
   "parties": [
     {
-      "name": "Northwind Traders, Inc.",
+      "name": "Initrode Systems, Inc.",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Disclosing Party"
+      "role": "Provider"
     },
     {
-      "name": "Contoso Analytics LLC",
+      "name": "Hooli LLC",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Receiving Party"
+      "role": "Customer"
     }
   ],
   "dates": {
     "effective": {
-      "value": "2025-01-15",
-      "confidence": 0.85,
+      "value": "2023-03-15",
+      "confidence": 0.9,
       "source": "deterministic"
     },
     "expiration": {
@@ -43,74 +43,74 @@
       "source": "deterministic"
     },
     "notice_period_days": {
-      "value": 90,
+      "value": 60,
       "confidence": 0.7,
       "source": "deterministic"
     }
   },
   "governing_law": {
-    "value": "State of New York",
+    "value": "State of California",
     "confidence": 0.85,
     "source": "deterministic"
   },
   "clauses": [
     {
-      "canonical_title": "Definitions",
-      "detected_title": "## Definitions",
-      "tier": "h2",
+      "canonical_title": "Services",
+      "detected_title": "1. Services",
+      "tier": "numbered",
       "span": {
-        "start": 246,
-        "end": 411
+        "start": 242,
+        "end": 329
       },
-      "confidence": 0.95,
+      "confidence": 0.6,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Payment",
+      "detected_title": "2. Fees and Payment",
+      "tier": "numbered",
+      "span": {
+        "start": 329,
+        "end": 476
+      },
+      "confidence": 0.8,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Termination",
+      "detected_title": "3. Term and Termination",
+      "tier": "numbered",
+      "span": {
+        "start": 476,
+        "end": 692
+      },
+      "confidence": 0.8,
       "source": "deterministic",
       "mapped": true
     },
     {
       "canonical_title": "Confidentiality",
-      "detected_title": "## Confidentiality Obligations",
-      "tier": "h2",
+      "detected_title": "4. Confidentiality",
+      "tier": "numbered",
       "span": {
-        "start": 411,
-        "end": 601
+        "start": 692,
+        "end": 800
       },
-      "confidence": 0.95,
-      "source": "deterministic",
-      "mapped": true
-    },
-    {
-      "canonical_title": "Term",
-      "detected_title": "## Term",
-      "tier": "h2",
-      "span": {
-        "start": 601,
-        "end": 841
-      },
-      "confidence": 0.95,
-      "source": "deterministic",
-      "mapped": true
-    },
-    {
-      "canonical_title": "Indemnification",
-      "detected_title": "## Indemnification",
-      "tier": "h2",
-      "span": {
-        "start": 841,
-        "end": 975
-      },
-      "confidence": 0.95,
+      "confidence": 0.8,
       "source": "deterministic",
       "mapped": true
     },
     {
       "canonical_title": "Governing Law",
-      "detected_title": "## Governing Law",
-      "tier": "h2",
+      "detected_title": "5. Governing Law",
+      "tier": "numbered",
       "span": {
-        "start": 975,
-        "end": 1097
+        "start": 800,
+        "end": 890
       },
-      "confidence": 0.95,
+      "confidence": 0.8,
       "source": "deterministic",
       "mapped": true
     }
@@ -122,12 +122,17 @@
       "source": "deterministic"
     },
     {
-      "term": "Disclosing Party",
+      "term": "Effective Date",
       "confidence": 0.6,
       "source": "deterministic"
     },
     {
-      "term": "Receiving Party",
+      "term": "Provider",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Customer",
       "confidence": 0.6,
       "source": "deterministic"
     },
@@ -138,9 +143,9 @@
     }
   ],
   "value": {
-    "value": null,
-    "confidence": 0.0,
-    "source": "none"
+    "value": "$500,000",
+    "confidence": 0.6,
+    "source": "deterministic"
   },
   "_meta": {
     "extractor_version": "0.1.1",

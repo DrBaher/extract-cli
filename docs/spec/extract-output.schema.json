@@ -69,7 +69,8 @@
             "markdown",
             "text",
             "docx",
-            "pdf"
+            "pdf",
+            "html"
           ]
         },
         "sha256": {
