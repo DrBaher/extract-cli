@@ -80,7 +80,12 @@ endpoint. Any failure (no config, network error, unparseable JSON) is caught:
 a warning to stderr, deterministic output untouched. The LLM only *adds* fuzzy
 fields (`term.renewal_mechanics`, `obligations`) and fills `governing_law` only
 when the deterministic tier found nothing — it never overwrites a deterministic
-value.
+value. As a **clause-map fallback**, when the deterministic cascade returned no
+clauses the LLM is asked for the section headings (the clause keys are added to
+the prompt only then); the titles are normalized through the same
+`_canonicalize_clause` vocabulary, located in the text for a best-effort span,
+and emitted with `tier: "llm"` / `source: "llm"`. This covers DOCX that
+auto-number with no heading style (their numbers live only in `numbering.xml`).
 
 ## The output contract
 

@@ -64,6 +64,15 @@ opt-in, never in a hot path, and gated behind an explicit flag and a config
 file — if no config is present, `--llm` degrades gracefully with a warning and
 you still get the full deterministic output.
 
+**Clause-map fallback.** Some documents (e.g. `.docx` that auto-number clauses
+via Word's numbering with no heading style) carry no signal the deterministic
+cascade can see, so its clause map comes back empty. When `--llm` is set *and*
+no clauses were detected, the LLM is asked for the section headings; the result
+is normalized through the same canonical vocabulary and emitted with
+`tier: "llm"`, `source: "llm"`, and a modest confidence (verify, not trust).
+When the deterministic cascade already found clauses, the LLM is not consulted
+for them.
+
 ## Commands
 
 ```bash

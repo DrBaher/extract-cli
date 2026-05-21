@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.5] - 2026-05-21
+
+### Added
+- **LLM clause-map fallback** (opt-in, `--llm` only). When the deterministic
+  cascade detects no clauses — e.g. a `.docx` that auto-numbers via Word's
+  numbering with no heading style, the limitation noted in 0.1.4 — the LLM is
+  asked for the section headings (the clause request is added to the prompt
+  only in that case). Returned titles are normalized through the same canonical
+  vocabulary as the deterministic path, located in the document for a
+  best-effort span, and emitted with `tier: "llm"`, `source: "llm"`, and a
+  modest confidence. The LLM is never consulted for clauses the deterministic
+  cascade already found, and the deterministic core remains fully useful with
+  no LLM. No schema change (the clause `tier`/`source` enums already allow
+  `llm`).
+
 ## [0.1.4] - 2026-05-21
 
 DOCX clause detection, driven by testing against 20 real `.docx` contracts
@@ -166,6 +181,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.5]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.5
 [0.1.4]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.4
 [0.1.3]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.3
 [0.1.2]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.2

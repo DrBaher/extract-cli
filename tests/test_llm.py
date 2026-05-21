@@ -67,6 +67,41 @@ def test_enrich_fills_only_missing_governing_law(monkeypatch: pytest.MonkeyPatch
     assert result["governing_law"] == {"value": "France", "confidence": 0.6, "source": "llm"}
 
 
+def test_llm_clause_fallback_when_deterministic_empty(monkeypatch: pytest.MonkeyPatch) -> None:
+    from tests._schema_validator import validate
+    monkeypatch.setattr(ex, "load_llm_config",
+                        lambda: {"provider": "anthropic", "api_key": "x"})
+    monkeypatch.setattr(ex, "_llm_request", lambda cfg, prompt, timeout=30.0: json.dumps(
+        {"clauses": [{"title": "Confidentiality"}, {"title": "Governing Law"},
+                     {"title": "Special Widget Terms"}]}))
+    # A document with no detectable clause headings -> 0 deterministic clauses.
+    text = ("This Agreement is made between Acme Co and Beta Co. The parties agree "
+            "to maintain confidentiality. Governed by the laws of Delaware.")
+    result = ex.build_extraction(text, text.encode("utf-8"), "text", "x.txt")
+    assert result["clauses"] == []
+    ex.llm_enrich(result, text, _ns())
+    cl = result["clauses"]
+    assert [c["canonical_title"] for c in cl] == ["Confidentiality", "Governing Law", "Special Widget Terms"]
+    assert all(c["tier"] == "llm" and c["source"] == "llm" for c in cl)
+    assert cl[0]["mapped"] is True and cl[2]["mapped"] is False
+    assert result["_meta"]["llm_used"] is True and "llm" in result["_meta"]["tiers_used"]
+    assert validate(result, ex.output_schema()) == []  # llm clauses are schema-conformant
+
+
+def test_llm_does_not_replace_deterministic_clauses(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(ex, "load_llm_config",
+                        lambda: {"provider": "anthropic", "api_key": "x"})
+    monkeypatch.setattr(ex, "_llm_request", lambda cfg, prompt, timeout=30.0: json.dumps(
+        {"clauses": [{"title": "Should Not Appear"}]}))
+    text = ex.DEMO_DOCUMENT  # has H2 clauses
+    result = ex.build_extraction(text, text.encode("utf-8"), "markdown", "d.md")
+    assert result["clauses"] and all(c["tier"] == "h2" for c in result["clauses"])
+    ex.llm_enrich(result, text, _ns())
+    # Deterministic clauses are kept; the LLM clause was never requested/used.
+    assert all(c["tier"] == "h2" for c in result["clauses"])
+    assert not any(c["detected_title"] == "Should Not Appear" for c in result["clauses"])
+
+
 def test_request_error_degrades(monkeypatch: pytest.MonkeyPatch,
                                 capsys: pytest.CaptureFixture[str]) -> None:
     monkeypatch.setattr(ex, "load_llm_config",

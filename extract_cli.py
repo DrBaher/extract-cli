@@ -1275,13 +1275,27 @@ def load_llm_config() -> Optional[JSON]:
     return None
 
 
-_LLM_PROMPT = (
-    "You are a contract-extraction assistant. Given the contract text, return "
-    "ONLY a compact JSON object with keys: renewal_mechanics (string or null), "
-    "obligations (array of short strings, max 5), governing_law (string or "
-    "null). Base answers strictly on the text. No prose, JSON only.\n\n"
-    "CONTRACT:\n"
+_LLM_PROMPT_KEYS = (
+    "renewal_mechanics (string or null), obligations (array of short strings, "
+    "max 5), governing_law (string or null)"
 )
+# Requested only when the deterministic clause cascade found nothing (e.g. a
+# DOCX that auto-numbers with no heading style): ask the model for the section
+# headings so we can still produce a clause map.
+_LLM_PROMPT_CLAUSES = (
+    ", clauses (array, max 40, of objects {\"title\": \"<the section/clause "
+    "heading, verbatim if possible>\"} in document order, top-level sections "
+    "only)"
+)
+
+
+def _build_llm_prompt(text: str, want_clauses: bool) -> str:
+    keys = _LLM_PROMPT_KEYS + (_LLM_PROMPT_CLAUSES if want_clauses else "")
+    return (
+        "You are a contract-extraction assistant. Given the contract text, "
+        "return ONLY a compact JSON object with keys: " + keys + ". Base answers "
+        "strictly on the text. No prose, JSON only.\n\nCONTRACT:\n" + text[:16000]
+    )
 
 
 def _llm_request(cfg: JSON, prompt: str, timeout: float = 30.0) -> Optional[str]:
@@ -1337,8 +1351,44 @@ def _extract_json_object(s: str) -> Optional[JSON]:
         return None
 
 
+def _llm_clause_map(raw: Any, text: str) -> List[JSON]:
+    """Convert LLM-returned clause titles into schema-conformant clause objects.
+    Titles are canonicalized through the same suite vocabulary the deterministic
+    path uses, located in the document for a best-effort span, and marked
+    tier/source = 'llm' with a modest confidence (verify, not trust)."""
+    if not isinstance(raw, list):
+        return []
+    low = text.lower()
+    out: List[JSON] = []
+    seen: set[str] = set()
+    for item in raw[:40]:
+        title: Any = item.get("title") if isinstance(item, dict) else item
+        if not isinstance(title, str) or not title.strip():
+            continue
+        title = re.sub(r"\s+", " ", title.strip())
+        key = _norm_clause_key(title)
+        if not key or key in seen or _is_noise_clause_title(title):
+            continue
+        seen.add(key)
+        canonical, mapped = _canonicalize_clause(title)
+        idx = low.find(title.lower())
+        span = ({"start": idx, "end": min(idx + len(title), len(text))}
+                if idx >= 0 else {"start": 0, "end": 0})
+        out.append({
+            "canonical_title": canonical,
+            "detected_title": title,
+            "tier": "llm",
+            "span": span,
+            "confidence": 0.5,
+            "source": "llm",
+            "mapped": mapped,
+        })
+    return out
+
+
 def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
-    """Opt-in enrichment of fuzzy fields. Mutates `result` in place. Any
+    """Opt-in enrichment of fuzzy fields, plus a clause-map fallback when the
+    deterministic cascade found no clauses. Mutates `result` in place. Any
     failure (no config, network error, bad JSON) degrades gracefully: a warning
     to stderr and the deterministic output is left untouched."""
     cfg = load_llm_config()
@@ -1346,7 +1396,8 @@ def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
         _warn(args_ns, "no LLM config found (~/.config/contract-ops/llm.json or "
                        "./config/llm.json); skipping --llm enrichment")
         return
-    prompt = _LLM_PROMPT + text[:12000]
+    want_clauses = not result["clauses"]
+    prompt = _build_llm_prompt(text, want_clauses)
     try:
         raw = _llm_request(cfg, prompt)
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as e:
@@ -1376,6 +1427,11 @@ def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
     if isinstance(gl, str) and gl.strip() and result["governing_law"]["source"] == "none":
         result["governing_law"] = _field(gl.strip(), 0.6, "llm")
         enriched = True
+    if want_clauses:
+        cmap = _llm_clause_map(obj.get("clauses"), text)
+        if cmap:
+            result["clauses"] = cmap
+            enriched = True
 
     result["_meta"]["llm_used"] = True
     if enriched and "llm" not in result["_meta"]["tiers_used"]:
@@ -1658,7 +1714,8 @@ FIELD_CATALOG: Tuple[Tuple[str, str, str], ...] = (
     ("term.notice_period_days", "deterministic", "Notice period in days, best-effort"),
     ("term.auto_renew", "deterministic", "Auto-renewal flag, best-effort"),
     ("governing_law", "deterministic", "Governing law / jurisdiction"),
-    ("clauses", "deterministic", "Clause map normalized to the suite's canonical vocabulary"),
+    ("clauses", "deterministic", "Clause map normalized to the suite's canonical vocabulary "
+                                 "(LLM fallback under --llm when no headings are detected)"),
     ("defined_terms", "deterministic", "Defined-term inventory (quoted / parenthetical)"),
     ("value", "deterministic", "Headline monetary value"),
     ("term.renewal_mechanics", "llm", "Renewal mechanics (fuzzy; --llm only)"),
