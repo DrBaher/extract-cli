@@ -39,6 +39,25 @@ def test_dates_iso_normalization() -> None:
         assert out["source"] == "deterministic"
 
 
+def test_dates_effective_date_label_and_as_of() -> None:
+    # The "(the "Effective Date")" anchor, with the date wrapping a newline.
+    text = 'between A and B as of August\n31, 2016 (the "Effective Date").'
+    assert ex.extract_dates(text)["effective"]["value"] == "2016-08-31"
+    # Bare "as of <date>" cue.
+    assert ex.extract_dates("dated as of June 1, 2023")["effective"]["value"] == "2023-06-01"
+
+
+def test_term_length_rejects_non_number() -> None:
+    # "...for consecutive days" must NOT be reported as a term length.
+    text = "the Employment Period shall run for consecutive days as scheduled"
+    assert ex.extract_term(text)["length"]["source"] == "none"
+
+
+def test_title_skips_sgml_wrapper() -> None:
+    text = "<DOCUMENT>\n<TYPE>EX-10\n<TEXT>\n\nEMPLOYMENT AGREEMENT\n\nbody"
+    assert ex.extract_title(text, None, "text") == "EMPLOYMENT AGREEMENT"
+
+
 def test_dates_missing() -> None:
     out = ex.extract_dates("no dates in here")
     assert out["effective"] == ex._none_field()

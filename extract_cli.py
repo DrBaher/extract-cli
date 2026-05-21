@@ -214,6 +214,49 @@ def _qualifies_as_all_caps_heading(title: str) -> bool:
     return sum(1 for ch in title if "A" <= ch <= "Z") >= 4
 
 
+# Tier between bold-numbered and ALL-CAPS: plain numbered headings on their own
+# line -- "1. Termination", "5. Wage Compensation", "Section 3. Payment",
+# "Article IV. Confidentiality". These are the dominant real-world format in
+# foreign paper (and aren't caught by H2, **bold**, or ALL-CAPS). A title-case
+# heuristic distinguishes a heading from a numbered *sentence* or list item.
+_NUMBERED_HEADING_RE = re.compile(
+    r"^[ \t]*"
+    r"(?:(?:Article|Section|ARTICLE|SECTION)[ \t]+)?"
+    r"(?:" + _ROMAN_RE + r"|\d{1,2})\.?"
+    r"[ \t]+"
+    r"([A-Z][A-Za-z][^\n]{0,58})"
+    r"[ \t]*$",
+    re.MULTILINE,
+)
+
+# Lowercase words allowed inside an otherwise Title-Cased heading.
+_HEADING_STOPWORDS = {
+    "a", "an", "the", "and", "or", "of", "to", "for", "in", "on", "with",
+    "by", "at", "as", "per", "from", "into", "nor", "but",
+}
+
+
+def _qualifies_as_numbered_heading(title: str) -> bool:
+    """A numbered line qualifies as a heading only if its title looks like a
+    heading: 1-9 words, Title-Cased (every word starts uppercase or is a short
+    lowercase connector), no sentence-y lowercase verbs. A single word must be
+    >= 4 letters. Rejects 'The parties agree as follows' but accepts 'Wage
+    Compensation' and 'Term And Nature Of Employment'."""
+    t = title.strip().rstrip(".").strip()
+    words = t.split()
+    if not (1 <= len(words) <= 9):
+        return False
+    if len(words) == 1:
+        return sum(1 for ch in words[0] if ch.isalpha()) >= 4 and words[0][:1].isupper()
+    for w in words:
+        if w[:1].isupper() or not w[:1].isalpha():
+            continue  # capitalized word, or punctuation/number token
+        if w.lower() in _HEADING_STOPWORDS:
+            continue  # allowed connector
+        return False  # a lowercase content word => this is a sentence, not a heading
+    return True
+
+
 def detect_clauses(text: str) -> List[JSON]:
     """Run the three-tier cascade and return clauses with their detection tier.
 
@@ -227,6 +270,12 @@ def detect_clauses(text: str) -> List[JSON]:
     bold = list(_BOLD_HEADING_RE.finditer(text))
     if len(bold) >= 2:
         return _matches_to_clauses(text, bold, group=1, tier="bold-numbered")
+    numbered = [
+        m for m in _NUMBERED_HEADING_RE.finditer(text)
+        if _qualifies_as_numbered_heading(m.group(1))
+    ]
+    if len(numbered) >= 2:
+        return _matches_to_clauses(text, numbered, group=1, tier="numbered")
     caps = [
         m for m in _ALL_CAPS_HEADING_RE.finditer(text)
         if _qualifies_as_all_caps_heading(m.group(1))
@@ -266,8 +315,9 @@ def _matches_to_clauses(text: str, matches: List["re.Match[str]"], group: int,
 
 
 def _norm_clause_key(s: str) -> str:
-    """Normalize a clause title/alias for matching (number-stripped, lowercased)."""
-    return _strip_clause_number(s).strip().lower()
+    """Normalize a clause title/alias for matching (number-stripped, trailing
+    punctuation removed, lowercased)."""
+    return _strip_clause_number(s).strip().lower().rstrip(" .:;,")
 
 
 # ---------------------------------------------------------------------------
@@ -366,7 +416,7 @@ def _canonicalize_clause(detected_title: str) -> Tuple[Optional[str], bool]:
                 best, best_len = canonical, len(alias_key)
     if best is not None:
         return best, True
-    return _titlecase(detected_title), False
+    return _titlecase(detected_title.strip().rstrip(" .:;,")), False
 
 
 # ---------------------------------------------------------------------------
@@ -421,11 +471,17 @@ _DATE_PAT = (
 )
 _DATE_RE = re.compile(_DATE_PAT, re.IGNORECASE)
 
+# Highest-confidence: a date explicitly labeled "(the "Effective Date")".
+_EFFDATE_LABEL_RE = re.compile(
+    r"(" + _DATE_PAT + r")\s*\(\s*(?:the\s+)?[\"“]?\s*Effective\s+Date",
+    re.IGNORECASE,
+)
 _EFFECTIVE_RE = re.compile(
     r"(?:effective(?:\s+date)?(?:\s+(?:as\s+of|date|on))?|"
     r"dated(?:\s+as\s+of)?|"
     r"made(?:\s+and\s+entered\s+into)?(?:\s+as\s+of|\s+on)?|"
-    r"entered\s+into(?:\s+as\s+of|\s+on)?)"
+    r"entered\s+into(?:\s+as\s+of|\s+on)?|"
+    r"as\s+of)"
     r"[\s:,]+(?:the\s+)?(" + _DATE_PAT + r")",
     re.IGNORECASE,
 )
@@ -534,14 +590,18 @@ def _parse_date_to_iso(s: str) -> Optional[str]:
     return None
 
 
+def _date_field_from_str(raw: str, base_conf: float) -> JSON:
+    raw = re.sub(r"\s+", " ", raw.strip())
+    iso = _parse_date_to_iso(raw)
+    if iso is not None:
+        return _field(iso, base_conf)
+    return _field(raw, max(0.0, base_conf - 0.3))
+
+
 def _date_field(match: Optional["re.Match[str]"]) -> JSON:
     if match is None:
         return _none_field()
-    raw = match.group(1).strip()
-    iso = _parse_date_to_iso(raw)
-    if iso is not None:
-        return _field(iso, 0.85)
-    return _field(raw, 0.55)
+    return _date_field_from_str(match.group(1), 0.85)
 
 
 def _split_name_role(s: str) -> Tuple[str, Optional[str]]:
@@ -578,10 +638,12 @@ def extract_parties(text: str) -> List[JSON]:
 
 
 def extract_dates(text: str) -> JSON:
-    return {
-        "effective": _date_field(_EFFECTIVE_RE.search(text)),
-        "expiration": _date_field(_EXPIRE_RE.search(text)),
-    }
+    label = _EFFDATE_LABEL_RE.search(text)
+    if label is not None:
+        effective = _date_field_from_str(label.group(1), 0.9)
+    else:
+        effective = _date_field(_EFFECTIVE_RE.search(text))
+    return {"effective": effective, "expiration": _date_field(_EXPIRE_RE.search(text))}
 
 
 def extract_governing_law(text: str) -> JSON:
@@ -600,10 +662,10 @@ def extract_term(text: str) -> JSON:
     if m:
         num = _word_to_int(m.group(1))
         unit = m.group(2).lower().rstrip("s")
+        # Only emit when the captured token is a real number; otherwise the
+        # match was a coincidence ("...consecutive days") -> leave as not-found.
         if num is not None:
             length = _field(f"{num} {unit}{'s' if num != 1 else ''}", 0.7)
-        else:
-            length = _field(f"{m.group(1)} {m.group(2)}".strip(), 0.5)
 
     notice = _none_field()
     nm = _NOTICE_RE.search(text)
@@ -649,7 +711,8 @@ def extract_clauses(text: str) -> List[JSON]:
     for c in detect_clauses(text):
         canonical, mapped = _canonicalize_clause(c["title"])
         tier = c["tier"]
-        base = {"h2": 0.95, "bold-numbered": 0.85, "all-caps": 0.75, "explicit": 0.95}.get(tier, 0.7)
+        base = {"h2": 0.95, "bold-numbered": 0.85, "numbered": 0.8,
+                "all-caps": 0.75, "explicit": 0.95}.get(tier, 0.7)
         conf = round(base * (1.0 if mapped else 0.75), 2)
         out.append({
             "canonical_title": canonical,
@@ -669,10 +732,14 @@ def extract_title(text: str, path: Optional[Path], fmt: str) -> Optional[str]:
         return m.group(1).strip()
     for line in text.splitlines():
         ls = line.strip().lstrip("#").strip()
-        if ls:
-            if len(ls) <= 90:
-                return ls
-            break
+        if not ls:
+            continue
+        # Skip SGML/XML wrapper lines (e.g. SEC EDGAR "<DOCUMENT>", "<TYPE>...").
+        if ls.startswith("<"):
+            continue
+        if len(ls) <= 90:
+            return ls
+        break
     if path is not None:
         return _titlecase(path.stem.replace("_", " ").replace("-", " "))
     return None
@@ -834,9 +901,15 @@ def _pdf_unescape(s: str) -> str:
 
 
 def _pdf_text_from_content(content: bytes) -> str:
+    """Pull text strings from a PDF content stream, but ONLY from inside text
+    objects (`BT` ... `ET`). Real text lives there; embedded fonts, images,
+    digital-signature blobs and metadata streams have no BT/ET, so gating on it
+    keeps their binary bytes (which often contain stray `(...)` sequences) out
+    of the output -- essential for real signed/font-embedded PDFs."""
     s = content.decode("latin-1", "replace")
     lines: List[str] = []
     cur: List[str] = []
+    in_text = False
 
     def flush() -> None:
         if cur:
@@ -845,15 +918,32 @@ def _pdf_text_from_content(content: bytes) -> str:
 
     for m in _PDF_TOKEN_RE.finditer(s):
         tok = m.group(0)
-        if tok.startswith("("):
+        if tok == "BT":
+            flush()
+            in_text = True
+        elif tok == "ET":
+            flush()
+            in_text = False
+        elif not in_text:
+            continue
+        elif tok.startswith("("):
             cur.append(_pdf_unescape(tok[1:-1]))
         elif tok.startswith("["):
             for sm in re.finditer(r"\((?:\\.|[^\\()])*\)", tok):
                 cur.append(_pdf_unescape(sm.group(0)[1:-1]))
-        elif tok in ("Td", "TD", "T*", "'", '"', "BT", "ET"):
+        elif tok in ("Td", "TD", "T*", "'", '"'):
             flush()
     flush()
     return "\n".join(lines)
+
+
+def _mostly_printable(s: str) -> bool:
+    """True if `s` is overwhelmingly printable text (backstop against a
+    malformed stream slipping binary through the BT/ET gate)."""
+    if not s:
+        return False
+    printable = sum(1 for ch in s if ch in "\n\t" or 32 <= ord(ch) < 127 or ord(ch) > 160)
+    return printable / len(s) >= 0.85
 
 
 def _read_pdf_stdlib(raw: bytes) -> str:
@@ -873,9 +963,11 @@ def _read_pdf_stdlib(raw: bytes) -> str:
             content = zlib.decompress(body)
         except Exception:
             content = body
-        chunks.append(_pdf_text_from_content(content))
+        piece = _pdf_text_from_content(content)
+        if piece.strip() and _mostly_printable(piece):
+            chunks.append(piece)
         idx = e + len(b"endstream")
-    return "\n".join(c for c in chunks if c.strip())
+    return "\n".join(chunks)
 
 
 def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, str, List[str]]:
@@ -1293,7 +1385,7 @@ def output_schema() -> JSON:
                     "properties": {
                         "canonical_title": {"type": ["string", "null"]},
                         "detected_title": {"type": "string"},
-                        "tier": {"enum": ["h2", "bold-numbered", "all-caps", "explicit", "llm"]},
+                        "tier": {"enum": ["h2", "bold-numbered", "numbered", "all-caps", "explicit", "llm"]},
                         "span": {
                             "type": "object",
                             "required": ["start", "end"],

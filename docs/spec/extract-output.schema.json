@@ -183,6 +183,7 @@
             "enum": [
               "h2",
               "bold-numbered",
+              "numbered",
               "all-caps",
               "explicit",
               "llm"

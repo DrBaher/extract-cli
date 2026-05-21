@@ -142,6 +142,19 @@ def test_pdf_unescape() -> None:
     assert ex._pdf_unescape(r"\101\102") == "AB"  # octal escapes
 
 
+def test_pdf_text_only_inside_bt_et() -> None:
+    # Strings outside BT/ET (font/signature/metadata stream bytes that happen to
+    # contain parentheses) must be ignored; only text objects yield text.
+    content = b"(garbage outside) /Font << >> BT (real text) Tj ET (more garbage)"
+    assert ex._pdf_text_from_content(content) == "real text"
+
+
+def test_pdf_mostly_printable_backstop() -> None:
+    assert ex._mostly_printable("Hello, world")
+    assert not ex._mostly_printable("\x00\x01\x02\x03\x04\x05\x06\x07")
+    assert not ex._mostly_printable("")
+
+
 def test_extract_json_object_from_noise() -> None:
     assert ex._extract_json_object('prefix {"a": 1} suffix') == {"a": 1}
     assert ex._extract_json_object("no json here") is None

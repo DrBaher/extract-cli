@@ -25,6 +25,50 @@ def test_tier3_all_caps() -> None:
     assert [c["tier"] for c in clauses] == ["all-caps", "all-caps"]
 
 
+def test_tier_numbered_plain_headings() -> None:
+    # Real-world dominant format: plain numbered, mixed-case, unbolded headings.
+    text = ("1. Term And Nature Of Employment\n\nbody about term\n\n"
+            "2. Wage Compensation\n\nbody about wages\n\n"
+            "5. Termination\n\nbody about termination")
+    clauses = ex.detect_clauses(text)
+    assert [c["tier"] for c in clauses] == ["numbered", "numbered", "numbered"]
+    assert clauses[0]["title"] == "Term And Nature Of Employment"
+    assert clauses[2]["title"] == "Termination"
+
+
+def test_numbered_heading_rejects_sentences() -> None:
+    # "1. The Company shall pay..." is a numbered sentence, not a heading.
+    assert ex._qualifies_as_numbered_heading("Wage Compensation")
+    assert ex._qualifies_as_numbered_heading("Term And Nature Of Employment")
+    assert ex._qualifies_as_numbered_heading("Termination")
+    assert not ex._qualifies_as_numbered_heading("The Company shall pay the Employee monthly")
+    assert not ex._qualifies_as_numbered_heading("Fee")  # single word < 4 letters
+    assert not ex._qualifies_as_numbered_heading(
+        "EMPLOYEE shall be compensated on the basis of an annual salary")
+
+
+def test_numbered_section_article_prefixes() -> None:
+    text = ("Section 1. Definitions\n\nx\n\nSection 2. Confidentiality\n\ny\n\n"
+            "Article IV. Governing Law\n\nz")
+    clauses = ex.detect_clauses(text)
+    assert all(c["tier"] == "numbered" for c in clauses)
+    assert clauses[0]["title"] == "Definitions"
+    assert clauses[2]["title"] == "Governing Law"
+
+
+def test_numbered_does_not_shadow_bold() -> None:
+    # Bold-numbered must win over plain-numbered when both could match.
+    text = "**1. Purpose**\n\nx\n\n**2. Scope**\n\ny"
+    assert all(c["tier"] == "bold-numbered" for c in ex.detect_clauses(text))
+
+
+def test_trailing_period_stripped_from_titles() -> None:
+    canon, mapped = ex._canonicalize_clause("Other Benefits.")
+    assert canon == "Other Benefits"
+    # And a mapped clause with a trailing period still maps.
+    assert ex._canonicalize_clause("Survival.") == ("Survival", True)
+
+
 def test_cascade_priority_h2_wins() -> None:
     # An H2 present means the bold/all-caps fallbacks must not fire.
     text = "## Real Heading\n\n**1. Not A Heading**\n\nALSO NOT A HEADING\n\nbody"
