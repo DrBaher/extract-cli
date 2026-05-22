@@ -244,6 +244,8 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.8]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.8
+[0.1.7]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.7
 [0.1.6]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.6
 [0.1.5]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.5
 [0.1.4]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.4
