@@ -152,6 +152,46 @@ def test_docx_heading_style_helpers() -> None:
     # Run-in heading: title is the lead before the sentence body.
     assert ex._docx_heading_title("Payment.  Customer will pay the fees.") == "Payment"
     assert ex._docx_heading_title("Governing Law") == "Governing Law"
+
+
+def test_emit_docx_paragraph() -> None:
+    """The shared emitter both .docx readers use: heading styles / numbered
+    paragraphs become `## headings`, fully-bold lines become `**...**`."""
+    out: list[str] = []
+    ex._emit_docx_paragraph(out, "Confidentiality", "Heading2", False, False)   # heading style
+    ex._emit_docx_paragraph(out, "Term", None, True, False)                     # auto-numbered
+    ex._emit_docx_paragraph(out, "Important Notice", None, False, True)         # fully bold
+    ex._emit_docx_paragraph(out, "Just some body text.", None, False, False)    # plain
+    ex._emit_docx_paragraph(out, "", None, False, False)                        # blank
+    ex._emit_docx_paragraph(out, "Payment.  Customer will pay.", "Heading1", False, False)  # run-in
+    assert out == [
+        "## Confidentiality",
+        "## Term",
+        "**Important Notice**",
+        "Just some body text.",
+        "",
+        "## Payment",
+        "Customer will pay.",   # run-in body split onto its own line
+    ]
+
+
+def test_docx_readers_agree_on_clause_map() -> None:
+    """Regression: the python-docx reader must surface the same clause map as the
+    stdlib reader on a heading-styled .docx. The python-docx path used to flatten
+    heading styles and return an empty clause map. Skips without [docx]."""
+    pytest.importorskip("docx")
+    path = FIXTURES / "heading_docx.docx"
+    raw = path.read_bytes()
+
+    def clause_titles(prefer_optional: bool) -> list[str]:
+        _raw, text, fmt, _w = ex.load_source(path, prefer_optional=prefer_optional)
+        result = ex.build_extraction(text, raw, fmt, "h.docx")
+        return [c["canonical_title"] for c in result["clauses"]]
+
+    stdlib = clause_titles(False)
+    pydocx = clause_titles(True)
+    assert stdlib, "stdlib reader should detect the heading-styled clauses"
+    assert pydocx == stdlib, "python-docx path must agree with the stdlib reader"
     # A full sentence carrying a heading style is rejected (not a clause title).
     assert ex._docx_heading_title(
         "Either party may terminate this Agreement upon material breach that "
