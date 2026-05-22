@@ -39,7 +39,7 @@
     },
     "auto_renew": {
       "value": true,
-      "confidence": 0.65,
+      "confidence": 0.7,
       "source": "deterministic"
     },
     "notice_period_days": {
@@ -150,7 +150,7 @@
   "amounts": [],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.10",
+    "extractor_version": "0.1.11",
     "tiers_used": [
       "deterministic"
     ],

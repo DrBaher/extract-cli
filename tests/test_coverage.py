@@ -211,6 +211,19 @@ def test_render_table_unmapped_legend() -> None:
     assert "* = not mapped" in ex.render_table(r, no_confidence=False)
 
 
+def test_render_table_jurisdiction_amounts_signatories() -> None:
+    r = ex.build_extraction("body", b"x", "markdown", "x.md")
+    r["jurisdiction"] = ex._field("US-DE", ex.CONF_JURISDICTION)
+    r["amounts"] = [{"value": "$1", "confidence": 0.6, "source": "deterministic"},
+                    {"value": "$2", "confidence": 0.6, "source": "deterministic"}]
+    r["signatories"] = [{"name": "Jane Doe", "title": "CEO",
+                         "confidence": ex.CONF_SIGNATORY, "source": "deterministic"}]
+    table = ex.render_table(r, no_confidence=False)
+    assert "US-DE" in table
+    assert "+1 more" in table
+    assert "Signatories (1)" in table and "Jane Doe - CEO" in table
+
+
 def test_cli_silent_table_suppresses_human_view(capsys: pytest.CaptureFixture[str]) -> None:
     assert ex.main([str(FIXTURES / "nda_h2.md"), "--silent", "--format", "table"]) == 0
     assert "Clause map" not in capsys.readouterr().out

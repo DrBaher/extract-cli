@@ -43,11 +43,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.10"
+__version__ = "0.1.11"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.10"
+EXTRACTOR_VERSION = "0.1.11"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
@@ -503,6 +503,42 @@ def _none_field() -> JSON:
     return {"value": None, "confidence": 0.0, "source": "none"}
 
 
+# --- Confidence scale -------------------------------------------------------
+# These confidences are "verify, not trust" hints in [0, 1] -- a ranking of
+# *structural certainty*, not calibrated probabilities. Higher means the
+# extraction rests on more unambiguous structure; lower means a looser heuristic
+# or an LLM guess. Downstream tools threshold on them, so they are centralized
+# here and ordered into a single descending ladder rather than scattered as
+# magic numbers:
+#
+#   .95  explicit Markdown H2 heading
+#   .90  strong unambiguous pattern (parties "between X and Y"; labeled date)
+#   .85  clear keyword/structure (governing law; ISO date; bold-numbered heading)
+#   .80  keyworded but looser (plain numbered/ARTICLE heading; jurisdiction code)
+#   .75  structural-only heading (ALL-CAPS)
+#   .70  best-effort regex on common phrasing (term length, notice, auto-renew)
+#   .60  weak heuristic / LLM-enriched scalar (value, amounts, defined terms)
+#   .55  loose match (signature block, LLM obligations, non-ISO raw date)
+#   .50  fuzzy (LLM clause-map fallback)
+CONF_H2 = 0.95
+CONF_PARTIES = 0.90
+CONF_DATE_LABELED = 0.90
+CONF_DATE_ISO = 0.85
+CONF_GOVERNING_LAW = 0.85
+CONF_BOLD_HEADING = 0.85
+CONF_NUMBERED_HEADING = 0.80
+CONF_JURISDICTION = 0.80
+CONF_ALLCAPS_HEADING = 0.75
+CONF_TERM = 0.70
+CONF_WEAK = 0.60
+CONF_LLM = 0.60
+CONF_DATE_RAW = 0.55
+CONF_LLM_LIST = 0.55
+CONF_SIGNATORY = 0.55
+CONF_LLM_CLAUSE = 0.50
+CONF_UNMAPPED_FACTOR = 0.75  # multiplier applied to a clause that doesn't map to the vocabulary
+
+
 def _titlecase(s: str) -> str:
     s = s.strip()
     if not s:
@@ -675,7 +711,7 @@ def _date_field_from_str(raw: str, base_conf: float) -> JSON:
 def _date_field(match: Optional["re.Match[str]"]) -> JSON:
     if match is None:
         return _none_field()
-    return _date_field_from_str(match.group(1), 0.85)
+    return _date_field_from_str(match.group(1), CONF_DATE_ISO)
 
 
 # Trailing descriptors that follow a party's actual name and should be dropped
@@ -739,7 +775,7 @@ def extract_parties(text: str) -> List[JSON]:
         name, role = _split_name_role(raw)
         if not name or len(name) < 2 or len(name) > 120:
             continue
-        entry: JSON = {"name": name, "confidence": 0.9, "source": "deterministic"}
+        entry: JSON = {"name": name, "confidence": CONF_PARTIES, "source": "deterministic"}
         entry["role"] = role
         out.append(entry)
     return out
@@ -748,7 +784,7 @@ def extract_parties(text: str) -> List[JSON]:
 def extract_dates(text: str) -> JSON:
     label = _EFFDATE_LABEL_RE.search(text)
     if label is not None:
-        effective = _date_field_from_str(label.group(1), 0.9)
+        effective = _date_field_from_str(label.group(1), CONF_DATE_LABELED)
     else:
         effective = _date_field(_EFFECTIVE_RE.search(text))
     return {"effective": effective, "expiration": _date_field(_EXPIRE_RE.search(text))}
@@ -761,7 +797,7 @@ def extract_governing_law(text: str) -> JSON:
     juris = re.sub(r"\s+", " ", m.group(1).strip().rstrip(".,")).strip()
     if not juris:  # pragma: no cover - the capture group requires a leading letter
         return _none_field()
-    return _field(juris, 0.85)
+    return _field(juris, CONF_GOVERNING_LAW)
 
 
 def extract_term(text: str) -> JSON:
@@ -773,20 +809,20 @@ def extract_term(text: str) -> JSON:
         # Only emit when the captured token is a real number; otherwise the
         # match was a coincidence ("...consecutive days") -> leave as not-found.
         if num is not None:
-            length = _field(f"{num} {unit}{'s' if num != 1 else ''}", 0.7)
+            length = _field(f"{num} {unit}{'s' if num != 1 else ''}", CONF_TERM)
 
     notice = _none_field()
     nm = _NOTICE_RE.search(text)
     if nm:
         days = _word_to_int(nm.group(1))
         if days is not None:
-            notice = _field(days, 0.7)
+            notice = _field(days, CONF_TERM)
 
     auto = _none_field()
     if _AUTORENEW_NEG_RE.search(text):
-        auto = _field(False, 0.7)
+        auto = _field(False, CONF_TERM)
     elif _AUTORENEW_POS_RE.search(text):
-        auto = _field(True, 0.65)
+        auto = _field(True, CONF_TERM)
 
     return {"length": length, "auto_renew": auto, "notice_period_days": notice}
 
@@ -795,7 +831,7 @@ def extract_value(text: str) -> JSON:
     m = _MONEY_RE.search(text)
     if not m:
         return _none_field()
-    return _field(re.sub(r"\s+", " ", m.group(0).strip()), 0.6)
+    return _field(re.sub(r"\s+", " ", m.group(0).strip()), CONF_WEAK)
 
 
 def extract_amounts(text: str) -> List[JSON]:
@@ -807,7 +843,7 @@ def extract_amounts(text: str) -> List[JSON]:
         seen.setdefault(amt, None)
         if len(seen) >= 30:
             break
-    return [{"value": a, "confidence": 0.6, "source": "deterministic"} for a in seen]
+    return [{"value": a, "confidence": CONF_WEAK, "source": "deterministic"} for a in seen]
 
 
 # Signature blocks: "By: <name>", "Name: <name>", "Printed Name: <name>".
@@ -820,20 +856,32 @@ _SIG_TITLE_RE = re.compile(
     r"(?:^|\n)[ \t]*(?:Title|Its)[ \t]*:[ \t]*([^\n_{}\[\]]{2,60})",
     re.IGNORECASE,
 )
+# A captured value is rejected when it's really the next column's label (common
+# in two-column signature blocks: "By:    By:") or a blank fill line.
+_SIG_LABEL_RE = re.compile(r"(?:by|name|title|signature|its|date|signed|print)\b", re.IGNORECASE)
+
+
+def _clean_sig_value(raw: str) -> Optional[str]:
+    v = re.sub(r"\s+", " ", raw).strip(" .,:")
+    if (len(v) < 2 or v.lower() == "the"
+            or not any(c.isalpha() for c in v)
+            or _SIG_LABEL_RE.match(v)):
+        return None
+    return v
 
 
 def extract_signatories(text: str) -> List[JSON]:
     """Best-effort signature-block names (and titles, when adjacent). Skips
     unfilled placeholders. Blank on a template; populated on executed paper."""
-    titles = [re.sub(r"\s+", " ", m.group(1)).strip(" .,") for m in _SIG_TITLE_RE.finditer(text)]
+    titles = [_clean_sig_value(m.group(1)) for m in _SIG_TITLE_RE.finditer(text)]
     out: List[JSON] = []
     seen: Dict[str, None] = {}
     for i, m in enumerate(_SIGNATORY_RE.finditer(text)):
-        name = re.sub(r"\s+", " ", m.group(1)).strip(" .,")
-        if len(name) < 2 or name.lower() in ("the", "name", "title") or name in seen:
+        name = _clean_sig_value(m.group(1))
+        if name is None or name in seen:
             continue
         seen[name] = None
-        entry: JSON = {"name": name, "confidence": 0.55, "source": "deterministic"}
+        entry: JSON = {"name": name, "confidence": CONF_SIGNATORY, "source": "deterministic"}
         entry["title"] = titles[i] if i < len(titles) else None
         out.append(entry)
         if len(out) >= 12:
@@ -869,7 +917,7 @@ def extract_jurisdiction(governing_law: JSON) -> JSON:
             if len(name) >= 5 and name in key:
                 code = c
                 break
-    return _field(code, 0.8, "deterministic") if code else _none_field()
+    return _field(code, CONF_JURISDICTION, "deterministic") if code else _none_field()
 
 
 def extract_defined_terms(text: str) -> List[JSON]:
@@ -885,7 +933,7 @@ def extract_defined_terms(text: str) -> List[JSON]:
             seen.setdefault(term, None)
             if len(seen) >= 50:
                 break
-    return [{"term": t, "confidence": 0.6, "source": "deterministic"} for t in seen]
+    return [{"term": t, "confidence": CONF_WEAK, "source": "deterministic"} for t in seen]
 
 
 # Detected-heading titles that are almost never real clauses: front/back-matter,
@@ -936,9 +984,9 @@ def extract_clauses(text: str) -> List[JSON]:
             continue
         canonical, mapped = _canonicalize_clause(c["title"])
         tier = c["tier"]
-        base = {"h2": 0.95, "bold-numbered": 0.85, "numbered": 0.8,
-                "all-caps": 0.75, "explicit": 0.95}.get(tier, 0.7)
-        conf = round(base * (1.0 if mapped else 0.75), 2)
+        base = {"h2": CONF_H2, "bold-numbered": CONF_BOLD_HEADING, "numbered": CONF_NUMBERED_HEADING,
+                "all-caps": CONF_ALLCAPS_HEADING, "explicit": CONF_H2}.get(tier, CONF_TERM)
+        conf = round(base * (1.0 if mapped else CONF_UNMAPPED_FACTOR), 2)
         out.append({
             "canonical_title": canonical,
             "detected_title": c["detected"],
@@ -1572,7 +1620,7 @@ def _llm_clause_map(raw: Any, text: str) -> List[JSON]:
             "detected_title": title,
             "tier": "llm",
             "span": span,
-            "confidence": 0.5,
+            "confidence": CONF_LLM_CLAUSE,
             "source": "llm",
             "mapped": mapped,
         })
@@ -1607,18 +1655,18 @@ def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
     enriched = False
     rm = obj.get("renewal_mechanics")
     if isinstance(rm, str) and rm.strip():
-        result["term"]["renewal_mechanics"] = _field(rm.strip(), 0.6, "llm")
+        result["term"]["renewal_mechanics"] = _field(rm.strip(), CONF_LLM, "llm")
         enriched = True
     obligations = obj.get("obligations")
     if isinstance(obligations, list) and obligations:
         result["obligations"] = [
-            {"text": str(o).strip(), "confidence": 0.55, "source": "llm"}
+            {"text": str(o).strip(), "confidence": CONF_LLM_LIST, "source": "llm"}
             for o in obligations[:5] if str(o).strip()
         ]
         enriched = True
     gl = obj.get("governing_law")
     if isinstance(gl, str) and gl.strip() and result["governing_law"]["source"] == "none":
-        result["governing_law"] = _field(gl.strip(), 0.6, "llm")
+        result["governing_law"] = _field(gl.strip(), CONF_LLM, "llm")
         enriched = True
     if want_clauses:
         cmap = _llm_clause_map(obj.get("clauses"), text)
@@ -1707,10 +1755,20 @@ def render_table(result: JSON, no_confidence: bool) -> str:
             lines.append(f"  renewal     : {_fv(term['renewal_mechanics'])} {_dim('[llm]')}")
     if "governing_law" in result:
         lines.append(_bold("Governing law"))
-        lines.append(f"  {_fv(result['governing_law'])}")
+        juris = result.get("jurisdiction", {}).get("value")
+        suffix = _dim(f"  [{juris}]") if juris else ""
+        lines.append(f"  {_fv(result['governing_law'])}{suffix}")
     if "value" in result:
+        amts = result.get("amounts") or []
+        extra = _dim(f"  (+{len(amts) - 1} more)") if len(amts) > 1 else ""
         lines.append(_bold("Value"))
-        lines.append(f"  {_fv(result['value'])}")
+        lines.append(f"  {_fv(result['value'])}{extra}")
+    signatories = result.get("signatories")
+    if signatories:
+        lines.append(_bold(f"Signatories ({len(signatories)})"))
+        for s in signatories[:6]:
+            title = f" - {s['title']}" if s.get("title") else ""
+            lines.append(f"  {s['name']}{title}")
     clauses = result.get("clauses")
     if clauses is not None:
         lines.append(_bold(f"Clause map ({len(clauses)})"))
@@ -1935,11 +1993,14 @@ FIELD_CATALOG: Tuple[Tuple[str, str, str], ...] = (
     ("term.length", "deterministic", "Term length, best-effort"),
     ("term.notice_period_days", "deterministic", "Notice period in days, best-effort"),
     ("term.auto_renew", "deterministic", "Auto-renewal flag, best-effort"),
-    ("governing_law", "deterministic", "Governing law / jurisdiction"),
+    ("governing_law", "deterministic", "Governing law text ('governed by the laws of ...')"),
+    ("jurisdiction", "deterministic", "Governing law normalized to a code (e.g. US-DE)"),
     ("clauses", "deterministic", "Clause map normalized to the suite's canonical vocabulary "
                                  "(LLM fallback under --llm when no headings are detected)"),
     ("defined_terms", "deterministic", "Defined-term inventory (quoted / parenthetical)"),
     ("value", "deterministic", "Headline monetary value"),
+    ("amounts", "deterministic", "All distinct monetary amounts"),
+    ("signatories", "deterministic", "Signature-block names/titles (By:/Name:/Title:)"),
     ("term.renewal_mechanics", "llm", "Renewal mechanics (fuzzy; --llm only)"),
     ("obligations", "llm", "Key obligation phrasing (fuzzy; --llm only)"),
 )

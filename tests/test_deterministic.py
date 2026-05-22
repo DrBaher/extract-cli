@@ -165,6 +165,13 @@ def test_signatories() -> None:
     assert ex.extract_signatories("Name: {party_1_signatory}\nBy: _____________") == []
 
 
+def test_signatories_two_column_blank_block() -> None:
+    # An unsigned two-column block ("By:   By:") must NOT capture the next
+    # column's label as a name.
+    text = "By:        By:\nName:      Name:\nTitle:     Title:\n"
+    assert ex.extract_signatories(text) == []
+
+
 def test_value_money() -> None:
     assert ex.extract_value("a fee of $250,000 is due")["value"] == "$250,000"
     assert ex.extract_value("budget is USD 1.5 million")["value"].startswith("USD")

@@ -142,16 +142,17 @@ Streams follow the suite convention: **stdout** is the machine payload (JSON),
   "value":      { "value": "$50,000", "confidence": 0.6, "source": "deterministic" },
   "amounts":    [ { "value": "$50,000", "confidence": 0.6, "source": "deterministic" } ],
   "signatories": [ { "name": "Jane Doe", "title": "CEO", "confidence": 0.55, "source": "deterministic" } ],
-  "_meta":      { "extractor_version": "0.1.9", "tiers_used": ["deterministic"], "llm_used": false }
+  "_meta":      { "extractor_version": "0.1.11", "tiers_used": ["deterministic"], "llm_used": false }
 }
 ```
 
 ## The clause map (the differentiator)
 
 A counterparty's "SECTION 7. NON-DISCLOSURE" and your template's
-"## Confidentiality" are the same clause. `extract-cli` reuses
-template-vault-cli's **clause-detection cascade** (Tier 1 `## H2` headings →
-Tier 2 bold-numbered `**1. …**` → Tier 3 ALL-CAPS lines) and a built-in
+"## Confidentiality" are the same clause. `extract-cli` extends
+template-vault-cli's **clause-detection cascade** — `## H2` headings →
+bold-numbered `**1. …**` → plain numbered (`1. Term`, `Section 3. …`, two-line
+`ARTICLE N`) → ALL-CAPS lines (and an opt-in `--llm` fallback) — plus a built-in
 **canonical alias vocabulary** to normalize foreign clause titles onto the
 names the rest of the suite already speaks. Clauses it can't map are kept with
 `mapped: false` (and a `*` in the table view) so nothing is silently dropped.

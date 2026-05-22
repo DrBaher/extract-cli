@@ -146,7 +146,7 @@
   ],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.10",
+    "extractor_version": "0.1.11",
     "tiers_used": [
       "deterministic"
     ],

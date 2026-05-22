@@ -56,6 +56,20 @@ def test_schema_command_emits_committed_spec() -> None:
     assert json.loads(proc.stdout) == json.loads(SPEC_FILE.read_text(encoding="utf-8"))
 
 
+def test_fields_catalog_covers_schema() -> None:
+    """`extract fields` (FIELD_CATALOG) must not silently drift from the output
+    schema -- every top-level output field appears in the catalog."""
+    schema_top = set(SCHEMA["properties"]) - {"_meta"}
+    catalog_prefixes = {f.split(".")[0] for f, _tier, _desc in ex.FIELD_CATALOG}
+    assert schema_top - catalog_prefixes == set()
+
+
+def test_confidence_scale_is_a_descending_ladder() -> None:
+    assert ex.CONF_H2 >= ex.CONF_PARTIES >= ex.CONF_GOVERNING_LAW >= ex.CONF_NUMBERED_HEADING
+    assert ex.CONF_ALLCAPS_HEADING >= ex.CONF_TERM >= ex.CONF_WEAK >= ex.CONF_LLM_CLAUSE
+    assert 0.0 < ex.CONF_LLM_CLAUSE and ex.CONF_H2 <= 1.0
+
+
 def test_schema_is_self_describing() -> None:
     assert SCHEMA["$schema"] == "https://json-schema.org/draft/2020-12/schema"
     assert "extract-cli" in SCHEMA["title"]

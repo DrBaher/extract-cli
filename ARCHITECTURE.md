@@ -40,15 +40,22 @@ the "verify, not trust" contract downstream tools consume.
 
 ## The clause map
 
-`detect_clauses(text)` is a faithful port of template-vault-cli's three-tier
-cascade; the first tier that fires wins so fallbacks never shadow real
-structure:
+`detect_clauses(text)` extends template-vault-cli's clause cascade; the first
+tier that fires wins so fallbacks never shadow real structure:
 
-1. **`h2`** — `## Heading` (Markdown-native). Needs ≥ 1 match.
+1. **`h2`** — `## Heading` (Markdown-native; also what the DOCX reader emits for
+   Word heading styles / `w:numPr` paragraphs). Needs ≥ 1 match.
 2. **`bold-numbered`** — `**1. Purpose**`, `**Section 4. Term**` (typical of
    DOCX → text). Needs ≥ 2 matches.
-3. **`all-caps`** — blank-line-framed `CONFIDENTIALITY` lines (typical of legal
+3. **`numbered`** — plain `1. Term`, `Section 3. Payment`, and two-line
+   `ARTICLE N` + title (the dominant format in foreign paper), gated by a
+   title-case heuristic. Needs ≥ 2 matches.
+4. **`all-caps`** — blank-line-framed `CONFIDENTIALITY` lines (typical of legal
    PDFs), with the single-token-≥-4-letters rule. Needs ≥ 2 matches.
+
+(Plus an opt-in **`llm`** clause-map fallback under `--llm` when none of the
+above fire — see the LLM tier below.) After detection, running headers/footers
+and front/back-matter are filtered (`_is_noise_clause_title` + repeat dedup).
 
 `_strip_clause_number` removes leading numbering, including Roman numerals
 1–39 (`_ROMAN_RE` lists longer alternatives first so the engine doesn't

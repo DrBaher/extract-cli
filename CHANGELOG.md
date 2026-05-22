@@ -6,6 +6,31 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.11] - 2026-05-22
+
+Polish pass.
+
+### Fixed
+- **Signature blocks no longer capture the next column's label.** A two-column
+  unsigned block (`By:        By:` / `Name:      Name:`) used to yield garbage
+  signatories like `{"name": "By:", "title": "Title:"}`; such captures (and
+  blank fill lines) are now rejected, so an unsigned template correctly returns
+  no signatories.
+
+### Changed
+- **`extract fields` and `--format table` now surface `jurisdiction`,
+  `amounts`, and `signatories`** — they were extracted and in the JSON but not
+  discoverable via the catalog or the human table view. A drift-guard test now
+  asserts `extract fields` can't diverge from the output schema.
+- **Confidence values centralized into a documented scale** (named `CONF_*`
+  constants with a single descending ladder, replacing scattered magic numbers)
+  so downstream "verify, not trust" thresholds are principled. The only value
+  change: an affirmative auto-renewal is now `0.70` (was `0.65`), matching the
+  other best-effort term fields.
+- Docs sweep: refreshed the clause-cascade description (h2 → bold-numbered →
+  numbered → all-caps, + the `--llm` fallback) across README/ARCHITECTURE and
+  the output-shape example. Line coverage held at 100% (CI-gated).
+
 ## [0.1.10] - 2026-05-22
 
 ### Fixed
@@ -296,6 +321,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.11]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.11
 [0.1.10]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.10
 [0.1.9]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.9
 [0.1.8]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.8
