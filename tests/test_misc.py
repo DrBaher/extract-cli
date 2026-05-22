@@ -173,6 +173,70 @@ def test_docx_heading_styles_drive_clause_map() -> None:
     assert [p["name"] for p in result["parties"]] == ["Initech Software, Inc.", "Globex Corporation"]
 
 
+def test_load_source_rejects_directory(tmp_path: Any) -> None:
+    with pytest.raises(ex.ExtractError):
+        ex.load_source(tmp_path)
+
+
+def test_pdf_unescape_control_and_unknown_escapes() -> None:
+    assert ex._pdf_unescape(r"a\tb\rc") == "a\tb\rc"
+    assert ex._pdf_unescape(r"\bx\fy") == "xy"     # \b and \f drop to nothing
+    assert ex._pdf_unescape(r"\q") == "q"          # unknown escape -> literal char
+
+
+def test_jurisdiction_contained_name() -> None:
+    assert ex.extract_jurisdiction(ex._field("Delaware, USA", 0.85))["value"] == "US-DE"
+
+
+def test_signatories_capped_at_twelve() -> None:
+    text = "\n".join(f"By: Person Number {i}" for i in range(20))
+    assert len(ex.extract_signatories(text)) == 12
+
+
+def test_amounts_capped() -> None:
+    text = " ".join(f"${i},000" for i in range(40))
+    assert len(ex.extract_amounts(text)) <= 30
+
+
+def test_main_broken_pipe_is_swallowed(monkeypatch: pytest.MonkeyPatch) -> None:
+    # `extract … | head` closes the pipe early; main() must exit 0, not crash.
+    # main()'s handler calls sys.stdout.close(), so give it a throwaway stdout
+    # (monkeypatch restores the real one) instead of closing pytest's capture.
+    import io
+    import sys as _sys
+
+    def boom(*_a: object, **_k: object) -> int:
+        raise BrokenPipeError()
+    monkeypatch.setattr(ex, "cmd_fields", boom)
+    monkeypatch.setattr(_sys, "stdout", io.StringIO())
+    assert ex.main(["fields"]) == 0
+
+
+def test_oversized_file_refused(tmp_path: Any) -> None:
+    p = tmp_path / "huge.txt"
+    with open(p, "wb") as f:
+        f.truncate(ex.MAX_INPUT_BYTES + 1)
+    with pytest.raises(ex.ExtractError):
+        ex.load_source(p)
+
+
+def test_docx_zip_bomb_guard(tmp_path: Any) -> None:
+    # A .docx whose document.xml decompresses past the cap is refused gracefully
+    # (no OOM): the reader checks the uncompressed size in the zip header first.
+    import io
+    import zipfile
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+        z.writestr("word/document.xml", b" " * (ex.MAX_DECOMPRESSED_BYTES + 1))
+    p = tmp_path / "bomb.docx"
+    p.write_bytes(buf.getvalue())
+    assert p.stat().st_size < 1_000_000  # tiny on disk
+    raw, text, fmt, warnings = ex.load_source(p)
+    assert fmt == "docx" and text == ""
+    assert any("decompress" in w for w in warnings)
+
+
 def test_numbered_docx_clauses() -> None:
     """A DOCX whose clauses are w:numPr list paragraphs (no heading style, no
     visible number) still yields a clause map; a deep numbered body sentence is

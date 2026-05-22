@@ -140,6 +140,31 @@ def test_auto_renew_unknown() -> None:
     assert ex.extract_term("The term is one year.")["auto_renew"]["source"] == "none"
 
 
+def test_jurisdiction_normalization() -> None:
+    assert ex.extract_jurisdiction(ex._field("State of Delaware", 0.85))["value"] == "US-DE"
+    assert ex.extract_jurisdiction(ex._field("Province of Ontario", 0.85))["value"] == "CA-ON"
+    assert ex.extract_jurisdiction(ex._field("the laws of England and Wales", 0.85))["value"] == "GB-EAW"
+    assert ex.extract_jurisdiction(ex._none_field())["source"] == "none"
+    assert ex.extract_jurisdiction(ex._field("Planet Mars", 0.85))["source"] == "none"
+
+
+def test_amounts_collects_all_distinct() -> None:
+    a = ex.extract_amounts("fees of $50,000 plus a cap of $1,000,000 and $50,000 again")
+    vals = [x["value"] for x in a]
+    assert "$50,000" in vals and "$1,000,000" in vals
+    assert len(vals) == len(set(vals))  # deduped
+
+
+def test_signatories() -> None:
+    text = "Signatures\n\nBy: Jane Q. Doe\nTitle: CEO\n\nName: John Smith\nTitle: Counsel\n"
+    s = ex.extract_signatories(text)
+    names = [x["name"] for x in s]
+    assert "Jane Q. Doe" in names and "John Smith" in names
+    assert any(x.get("title") == "CEO" for x in s)
+    # Unfilled placeholders must not be captured.
+    assert ex.extract_signatories("Name: {party_1_signatory}\nBy: _____________") == []
+
+
 def test_value_money() -> None:
     assert ex.extract_value("a fee of $250,000 is due")["value"] == "$250,000"
     assert ex.extract_value("budget is USD 1.5 million")["value"].startswith("USD")

@@ -40,6 +40,11 @@
     "confidence": 0.0,
     "source": "none"
   },
+  "jurisdiction": {
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
+  },
   "clauses": [],
   "defined_terms": [],
   "value": {
@@ -47,6 +52,8 @@
     "confidence": 0.0,
     "source": "none"
   },
+  "amounts": [],
+  "signatories": [],
   "_meta": {
     "extractor_version": "0.1.8",
     "tiers_used": [

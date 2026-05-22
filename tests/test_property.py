@@ -92,6 +92,24 @@ def test_random_garbage_never_crashes() -> None:
             assert 0 <= c["span"]["start"] < c["span"]["end"] <= len(text)
 
 
+def test_large_document_is_bounded() -> None:
+    """A big (but legal-sized) document extracts quickly and within memory --
+    the resource bounds keep the worst case sane."""
+    import time
+    import tracemalloc
+    doc = "".join(f"## Provision {i}\n\n{'Some body text about obligations. ' * 40}\n\n"
+                  for i in range(1500))
+    tracemalloc.start()
+    t0 = time.perf_counter()
+    result = ex.build_extraction(doc, doc.encode("utf-8"), "markdown", "big.md")
+    elapsed = time.perf_counter() - t0
+    _cur, peak = tracemalloc.get_traced_memory()
+    tracemalloc.stop()
+    assert elapsed < 10.0          # generous; real is well under a second
+    assert peak < 300 * 1024 * 1024
+    assert result["clauses"]
+
+
 def test_random_bytes_through_readers(tmp_path) -> None:
     """Readers must degrade gracefully (never raise) on random bytes that only
     *look* like a .pdf/.docx by extension."""

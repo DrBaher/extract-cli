@@ -10,9 +10,12 @@
     "dates",
     "term",
     "governing_law",
+    "jurisdiction",
     "clauses",
     "defined_terms",
     "value",
+    "amounts",
+    "signatories",
     "_meta"
   ],
   "additionalProperties": false,
@@ -157,6 +160,9 @@
     "governing_law": {
       "$ref": "#/$defs/field"
     },
+    "jurisdiction": {
+      "$ref": "#/$defs/field"
+    },
     "clauses": {
       "type": "array",
       "items": {
@@ -246,6 +252,58 @@
     },
     "value": {
       "$ref": "#/$defs/field"
+    },
+    "amounts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "value",
+          "confidence",
+          "source"
+        ],
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "signatories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "confidence",
+          "source"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "confidence": {
+            "$ref": "#/$defs/confidence"
+          },
+          "source": {
+            "$ref": "#/$defs/source"
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "obligations": {
       "type": "array",

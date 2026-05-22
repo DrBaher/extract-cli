@@ -53,6 +53,11 @@
     "confidence": 0.85,
     "source": "deterministic"
   },
+  "jurisdiction": {
+    "value": "US-NY",
+    "confidence": 0.8,
+    "source": "deterministic"
+  },
   "clauses": [
     {
       "canonical_title": "Cloud Service Agreement",
@@ -132,6 +137,8 @@
     "confidence": 0.0,
     "source": "none"
   },
+  "amounts": [],
+  "signatories": [],
   "_meta": {
     "extractor_version": "0.1.8",
     "tiers_used": [

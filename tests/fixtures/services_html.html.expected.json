@@ -53,18 +53,23 @@
     "confidence": 0.85,
     "source": "deterministic"
   },
+  "jurisdiction": {
+    "value": "US-CA",
+    "confidence": 0.8,
+    "source": "deterministic"
+  },
   "clauses": [
     {
-      "canonical_title": "Services",
+      "canonical_title": "Suspension",
       "detected_title": "1. Services",
       "tier": "numbered",
       "span": {
         "start": 242,
         "end": 329
       },
-      "confidence": 0.6,
+      "confidence": 0.8,
       "source": "deterministic",
-      "mapped": false
+      "mapped": true
     },
     {
       "canonical_title": "Payment",
@@ -147,6 +152,14 @@
     "confidence": 0.6,
     "source": "deterministic"
   },
+  "amounts": [
+    {
+      "value": "$500,000",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "signatories": [],
   "_meta": {
     "extractor_version": "0.1.8",
     "tiers_used": [

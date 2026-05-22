@@ -52,10 +52,12 @@ is a self-contained reference validator.
 
 Top-level keys: `document` {title, format, sha256, source_path}, `parties[]`,
 `dates` {effective, expiration}, `term` {length, auto_renew,
-notice_period_days, *renewal_mechanics?*}, `governing_law`, `clauses[]`
-{canonical_title, detected_title, tier, span, confidence, source, mapped},
-`defined_terms[]`, `value`, *`obligations[]?`*, and `_meta` {extractor_version,
-tiers_used, llm_used}. **Every extracted field carries a `confidence` (0–1) and
+notice_period_days, *renewal_mechanics?*}, `governing_law`, `jurisdiction`
+(normalized code, e.g. `US-DE`), `clauses[]` {canonical_title, detected_title,
+tier, span, confidence, source, mapped}, `defined_terms[]`, `value`,
+`amounts[]` (all monetary amounts), `signatories[]` {name, title}, *`obligations[]?`*,
+and `_meta` {extractor_version, tiers_used, llm_used}. Formats: markdown, text,
+html, docx, pdf. **Every extracted field carries a `confidence` (0–1) and
 a `source` ∈ {deterministic, llm, none}.** Scalar fields use the envelope
 `{value, confidence, source}`; "not found" is `{value: null, confidence: 0.0,
 source: "none"}`. Italic fields are added only under `--llm`.

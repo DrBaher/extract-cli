@@ -53,6 +53,11 @@
     "confidence": 0.85,
     "source": "deterministic"
   },
+  "jurisdiction": {
+    "value": "US-IL",
+    "confidence": 0.8,
+    "source": "deterministic"
+  },
   "clauses": [
     {
       "canonical_title": "Premises",
@@ -132,6 +137,14 @@
     "confidence": 0.6,
     "source": "deterministic"
   },
+  "amounts": [
+    {
+      "value": "$120,000",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "signatories": [],
   "_meta": {
     "extractor_version": "0.1.8",
     "tiers_used": [

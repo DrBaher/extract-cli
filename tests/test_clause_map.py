@@ -127,6 +127,21 @@ def test_roman_numeral_stripping() -> None:
         assert ex._strip_clause_number(raw) == expected, raw
 
 
+def test_vocabulary_round2() -> None:
+    assert ex._canonicalize_clause("Suspension") == ("Suspension", True)
+    assert ex._canonicalize_clause("Service Levels") == ("Service Levels", True)
+    assert ex._canonicalize_clause("Invoicing") == ("Payment", True)
+
+
+def test_noise_titles_round2() -> None:
+    for t in ["Recitals", "Signatures", "Defining Variables",
+              '"Product" means the software', "[ # ]% to [ # ]%"]:
+        assert ex._is_noise_clause_title(t), t
+    # Real clauses (incl. ones merely containing a noise-ish word) must survive.
+    for t in ["Means of Payment", "Support", "Suspension", "Confidentiality"]:
+        assert not ex._is_noise_clause_title(t), t
+
+
 def test_two_line_article_headings() -> None:
     # "ARTICLE N" on one line, the title on the next (common formal layout).
     text = ("ARTICLE I\n\nDEFINITIONS\n\nCapitalized terms have meanings.\n\n"

@@ -6,6 +6,33 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.9] - 2026-05-22
+
+### Security / robustness
+- **Resource bounds for untrusted input.** A hard on-disk file cap
+  (`MAX_INPUT_BYTES`, 100 MB) and a decompressed-size cap
+  (`MAX_DECOMPRESSED_BYTES`, 200 MB) so a zip-bomb `.docx` or zlib-bomb `.pdf`
+  can't exhaust memory: the DOCX reader checks `word/document.xml`'s
+  uncompressed size before reading, and the PDF reader decompresses streams
+  with a bounded budget. Both degrade gracefully (warning, empty text), never
+  crash. (Verified fast/bounded on a 2 MB doc: ~0.6 s, ~10 MB peak.)
+
+### Added (output schema — minor, backward-compatible additions)
+- **`jurisdiction`** — governing law normalized to a stable code
+  (`State of Delaware` → `US-DE`, `Province of Ontario` → `CA-ON`, …).
+- **`amounts[]`** — every distinct monetary amount (`value` remains the headline one).
+- **`signatories[]`** — `{name, title}` from signature blocks (`By:` / `Name:` /
+  `Title:`); empty on unsigned templates.
+
+### Changed
+- **Clause vocabulary round 2** (from the corpus survey): canonical
+  `Suspension`, `Support`, `Service Levels` + `invoicing`→Payment,
+  customer-data/protection-by-* → Data Protection. Noise filter now also drops
+  recitals/preamble/signature sections, definition fragments (a title starting
+  with a quote), and unfilled placeholders (`[ # ]%`). Mapped clause coverage
+  across the 58-document corpus rose from 57% → **64%**, no over-matching.
+- Test coverage raised to **92%** (94% with the `[docx]`/`[pdf]` extras).
+
 ## [0.1.8] - 2026-05-22
 
 Clause-detection breadth, driven by a 58-document real-corpus survey.
@@ -244,6 +271,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.9]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.9
 [0.1.8]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.8
 [0.1.7]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.7
 [0.1.6]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.6

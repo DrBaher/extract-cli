@@ -52,6 +52,13 @@ EXTRACTOR_VERSION = "0.1.8"
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
 
+# Resource bounds for untrusted input (extract-cli ingests counterparty files).
+# A hard cap on the file we'll read, and a cap on how much a .docx/.pdf is
+# allowed to DECOMPRESS to -- so a zip-bomb .docx or zlib-bomb .pdf can't
+# exhaust memory. Generous enough that real contracts never hit them.
+MAX_INPUT_BYTES = 100 * 1024 * 1024        # 100 MB on-disk file
+MAX_DECOMPRESSED_BYTES = 200 * 1024 * 1024  # 200 MB after decompression
+
 JSON = Dict[str, Any]
 
 CLI_NAME = "extract-cli"
@@ -392,7 +399,8 @@ CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
         "intellectual property", "ip rights", "ownership of ip", "proprietary rights",
         "intellectual property rights", "ownership",
     ],
-    "Payment": ["payment", "fees", "compensation", "fees and payment", "consideration", "pricing"],
+    "Payment": ["payment", "fees", "compensation", "fees and payment", "consideration",
+                "pricing", "invoicing", "invoices", "invoice"],
     "Warranties": [
         "warranties", "representations and warranties", "warranty", "reps and warranties",
         "representations",
@@ -409,7 +417,8 @@ CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
     ],
     "Non-Solicitation": ["non-solicit", "non-solicitation", "nonsolicitation", "no solicitation"],
     "Data Protection": ["data protection", "data privacy", "gdpr", "privacy", "personal data",
-                        "customer data", "customer content"],
+                        "customer data", "customer content", "protection by provider",
+                        "protection by customer"],
     "Insurance": ["insurance"],
     "Counterparts": ["counterparts"],
     "Survival": ["survival", "survival of obligations"],
@@ -433,6 +442,10 @@ CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
                                   "no third-party beneficiary", "no third party beneficiaries"],
     "Feedback": ["feedback", "feedback and usage data"],
     "Miscellaneous": ["miscellaneous", "general terms", "general provisions"],
+    # Round 2 (SaaS / services common clauses from the corpus tail).
+    "Suspension": ["suspension", "suspension of service", "suspension of services"],
+    "Support": ["support", "support services", "technical support", "customer support"],
+    "Service Levels": ["service levels", "service level agreement", "sla", "service level"],
 }
 
 
@@ -785,6 +798,80 @@ def extract_value(text: str) -> JSON:
     return _field(re.sub(r"\s+", " ", m.group(0).strip()), 0.6)
 
 
+def extract_amounts(text: str) -> List[JSON]:
+    """All distinct monetary amounts in the document (``value`` is the headline
+    first one). Useful downstream for fee schedules, caps, thresholds."""
+    seen: Dict[str, None] = {}
+    for m in _MONEY_RE.finditer(text):
+        amt = re.sub(r"\s+", " ", m.group(0).strip())
+        seen.setdefault(amt, None)
+        if len(seen) >= 30:
+            break
+    return [{"value": a, "confidence": 0.6, "source": "deterministic"} for a in seen]
+
+
+# Signature blocks: "By: <name>", "Name: <name>", "Printed Name: <name>".
+_SIGNATORY_RE = re.compile(
+    r"(?:^|\n)[ \t]*(?:By|Name|Printed\s+Name|Signed\s+by|Authorized\s+Signatory)"
+    r"[ \t]*:[ \t]*([^\n_{}\[\]]{2,60})",
+    re.IGNORECASE,
+)
+_SIG_TITLE_RE = re.compile(
+    r"(?:^|\n)[ \t]*(?:Title|Its)[ \t]*:[ \t]*([^\n_{}\[\]]{2,60})",
+    re.IGNORECASE,
+)
+
+
+def extract_signatories(text: str) -> List[JSON]:
+    """Best-effort signature-block names (and titles, when adjacent). Skips
+    unfilled placeholders. Blank on a template; populated on executed paper."""
+    titles = [re.sub(r"\s+", " ", m.group(1)).strip(" .,") for m in _SIG_TITLE_RE.finditer(text)]
+    out: List[JSON] = []
+    seen: Dict[str, None] = {}
+    for i, m in enumerate(_SIGNATORY_RE.finditer(text)):
+        name = re.sub(r"\s+", " ", m.group(1)).strip(" .,")
+        if len(name) < 2 or name.lower() in ("the", "name", "title") or name in seen:
+            continue
+        seen[name] = None
+        entry: JSON = {"name": name, "confidence": 0.55, "source": "deterministic"}
+        entry["title"] = titles[i] if i < len(titles) else None
+        out.append(entry)
+        if len(out) >= 12:
+            break
+    return out
+
+
+# Free-text jurisdiction -> a normalized ISO-ish code (best-effort, common only).
+_JURISDICTION_CODES: Dict[str, str] = {
+    "delaware": "US-DE", "new york": "US-NY", "california": "US-CA",
+    "texas": "US-TX", "illinois": "US-IL", "massachusetts": "US-MA",
+    "washington": "US-WA", "florida": "US-FL", "nevada": "US-NV",
+    "new jersey": "US-NJ", "pennsylvania": "US-PA", "michigan": "US-MI",
+    "ontario": "CA-ON", "quebec": "CA-QC", "british columbia": "CA-BC",
+    "england and wales": "GB-EAW", "england": "GB-ENG", "scotland": "GB-SCT",
+    "united kingdom": "GB", "france": "FR", "germany": "DE", "ireland": "IE",
+    "singapore": "SG", "australia": "AU", "india": "IN", "netherlands": "NL",
+}
+
+
+def extract_jurisdiction(governing_law: JSON) -> JSON:
+    """Normalize the governing-law jurisdiction to a stable code (e.g. 'State of
+    Delaware' -> 'US-DE') for downstream filtering. None when unrecognized."""
+    val = governing_law.get("value")
+    if not isinstance(val, str) or not val.strip():
+        return _none_field()
+    key = re.sub(r"^\s*(?:the\s+)?(?:state|commonwealth|province|laws?)\s+of\s+",
+                 "", val.strip(), flags=re.IGNORECASE).strip().lower()
+    key = re.sub(r"\s+", " ", key)
+    code = _JURISDICTION_CODES.get(key)
+    if code is None:  # try a contained name ("delaware, usa")
+        for name, c in _JURISDICTION_CODES.items():
+            if len(name) >= 5 and name in key:
+                code = c
+                break
+    return _field(code, 0.8, "deterministic") if code else _none_field()
+
+
 def extract_defined_terms(text: str) -> List[JSON]:
     seen: Dict[str, None] = {}
     for rx in (_DEFTERM_QUOTED_RE, _DEFTERM_PAREN_RE):
@@ -802,10 +889,12 @@ def extract_defined_terms(text: str) -> List[JSON]:
 
 
 # Detected-heading titles that are almost never real clauses: front/back-matter,
-# page/document codes, exhibit & schedule references.
+# page/document codes, exhibit & schedule references, signature blocks (now
+# captured as `signatories`), recitals/preamble, and template scaffolding.
 _NOISE_TITLE_PREFIX_RE = re.compile(
     r"^(?:table\s+of\s+contents|exhibit|schedule|annex|appendix|attachment|"
-    r"signature\s+page|page)\b",
+    r"signature\s+page|signatures?|page|recitals?|background|preamble|witnesseth|"
+    r"defining\s+variables)\b",
     re.IGNORECASE,
 )
 
@@ -813,13 +902,18 @@ _NOISE_TITLE_PREFIX_RE = re.compile(
 def _is_noise_clause_title(title: str) -> bool:
     """True for detected 'headings' that are structural noise rather than
     clauses -- document codes/page numbers (4+ consecutive digits, e.g.
-    'Ks 112708-2'), and front/back-matter like 'Table of Contents' or
-    'Exhibit B'. Safe filters only; kept conservative to avoid dropping real
-    clauses."""
+    'Ks 112708-2'), front/back-matter ('Table of Contents', 'Exhibit B'),
+    signature/recital sections, definition fragments (a title starting with a
+    quote, e.g. '"Product" means ...'), and unfilled template placeholders
+    ('[ # ]% to [ # ]%'). Safe filters only; kept conservative."""
     t = title.strip()
     if re.search(r"\d{4,}", t):
         return True
     if _NOISE_TITLE_PREFIX_RE.match(t):
+        return True
+    if t[:1] in "\"“[{":            # definition fragment / bracketed placeholder
+        return True
+    if re.search(r"\[\s*#|#\s*\]|%\s*\]", t):  # unfilled placeholder ('[ # ]%')
         return True
     return False
 
@@ -1043,6 +1137,13 @@ def _read_docx_stdlib(raw: bytes) -> str:
 
     w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        # Zip-bomb guard: the uncompressed size is in the header, so check it
+        # before reading (don't decompress GBs into memory).
+        info = z.getinfo("word/document.xml")
+        if info.file_size > MAX_DECOMPRESSED_BYTES:
+            raise ValueError(
+                f"word/document.xml decompresses to {info.file_size} bytes "
+                f"(> {MAX_DECOMPRESSED_BYTES} cap)")
         xml = z.read("word/document.xml")
     root = ET.fromstring(xml)
     paras: List[str] = []
@@ -1203,6 +1304,7 @@ def _read_pdf_stdlib(raw: bytes) -> str:
 
     chunks: List[str] = []
     idx = 0
+    budget = MAX_DECOMPRESSED_BYTES  # total decompressed-output budget (zlib-bomb guard)
     while True:
         s = raw.find(b"stream", idx)
         if s == -1:
@@ -1212,9 +1314,14 @@ def _read_pdf_stdlib(raw: bytes) -> str:
             break
         body = raw[s + len(b"stream"):e].lstrip(b"\r\n")
         try:
-            content = zlib.decompress(body)
+            # Bounded decompression: never expand a stream past the remaining
+            # budget, so a zlib-bomb stream can't exhaust memory.
+            content = zlib.decompressobj().decompress(body, budget + 1)
         except Exception:
             content = body
+        if len(content) > budget:
+            break
+        budget -= len(content)
         piece = _pdf_text_from_content(content)
         if piece.strip() and _mostly_printable(piece):
             chunks.append(piece)
@@ -1233,6 +1340,14 @@ def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, s
         raise ExtractError(f"no such file: {path}")
     if path.is_dir():
         raise ExtractError(f"path is a directory, not a file: {path}")
+    try:
+        size = path.stat().st_size
+    except OSError:
+        size = 0
+    if size > MAX_INPUT_BYTES:
+        raise ExtractError(
+            f"file is too large ({size // (1024 * 1024)} MB > "
+            f"{MAX_INPUT_BYTES // (1024 * 1024)} MB cap); refusing to read")
     raw = path.read_bytes()
     fmt = _detect_format(path, raw)
     warnings: List[str] = []
@@ -1272,6 +1387,7 @@ def build_extraction(text: str, raw: bytes, fmt: str,
     # keep the original text, which depends on line structure.
     flat = re.sub(r"[ \t\r\f\v]*\n[ \t\r\f\v]*", " ", text)
     flat = re.sub(r"[ \t]+", " ", flat)
+    governing_law = extract_governing_law(flat)
     return {
         "document": {
             "title": extract_title(text, Path(source_path) if source_path else None, fmt),
@@ -1282,10 +1398,13 @@ def build_extraction(text: str, raw: bytes, fmt: str,
         "parties": extract_parties(flat),
         "dates": extract_dates(flat),
         "term": extract_term(flat),
-        "governing_law": extract_governing_law(flat),
+        "governing_law": governing_law,
+        "jurisdiction": extract_jurisdiction(governing_law),
         "clauses": extract_clauses(text),
         "defined_terms": extract_defined_terms(flat),
         "value": extract_value(flat),
+        "amounts": extract_amounts(flat),
+        "signatories": extract_signatories(text),  # signature blocks are line-structured
         "_meta": {
             "extractor_version": EXTRACTOR_VERSION,
             "tiers_used": ["deterministic"],
@@ -1630,7 +1749,8 @@ def output_schema() -> JSON:
         "type": "object",
         "required": [
             "document", "parties", "dates", "term", "governing_law",
-            "clauses", "defined_terms", "value", "_meta",
+            "jurisdiction", "clauses", "defined_terms", "value", "amounts",
+            "signatories", "_meta",
         ],
         "additionalProperties": False,
         "$defs": {
@@ -1691,6 +1811,7 @@ def output_schema() -> JSON:
                 "additionalProperties": False,
             },
             "governing_law": field_ref,
+            "jurisdiction": field_ref,
             "clauses": {
                 "type": "array",
                 "items": {
@@ -1733,6 +1854,33 @@ def output_schema() -> JSON:
                 },
             },
             "value": field_ref,
+            "amounts": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["value", "confidence", "source"],
+                    "properties": {
+                        "value": {"type": "string"},
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
+            "signatories": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "required": ["name", "confidence", "source"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "title": {"type": ["string", "null"]},
+                        "confidence": {"$ref": "#/$defs/confidence"},
+                        "source": {"$ref": "#/$defs/source"},
+                    },
+                    "additionalProperties": False,
+                },
+            },
             "obligations": {
                 "type": "array",
                 "items": {

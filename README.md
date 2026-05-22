@@ -136,10 +136,13 @@ Streams follow the suite convention: **stdout** is the machine payload (JSON),
   "dates":      { "effective": { "value": "2024-03-01", "confidence": 0.85, "source": "deterministic" }, "expiration": { "value": null, "confidence": 0.0, "source": "none" } },
   "term":       { "length": { "value": "3 years", ... }, "auto_renew": { "value": true, ... }, "notice_period_days": { "value": 60, ... } },
   "governing_law": { "value": "State of Delaware", "confidence": 0.85, "source": "deterministic" },
+  "jurisdiction": { "value": "US-DE", "confidence": 0.8, "source": "deterministic" },
   "clauses":    [ { "canonical_title": "Confidentiality", "detected_title": "## Confidentiality Obligations", "tier": "h2", "span": {"start": 0, "end": 120}, "confidence": 0.95, "source": "deterministic", "mapped": true } ],
   "defined_terms": [ { "term": "Confidential Information", "confidence": 0.6, "source": "deterministic" } ],
   "value":      { "value": "$50,000", "confidence": 0.6, "source": "deterministic" },
-  "_meta":      { "extractor_version": "0.1.0", "tiers_used": ["deterministic"], "llm_used": false }
+  "amounts":    [ { "value": "$50,000", "confidence": 0.6, "source": "deterministic" } ],
+  "signatories": [ { "name": "Jane Doe", "title": "CEO", "confidence": 0.55, "source": "deterministic" } ],
+  "_meta":      { "extractor_version": "0.1.9", "tiers_used": ["deterministic"], "llm_used": false }
 }
 ```
 
