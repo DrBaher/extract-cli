@@ -42,11 +42,44 @@ _DOCX_PARAS = [
 _W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 
 
-def _docx_paragraph(text: str, bold: bool = False, style: str = "") -> str:
-    ppr = f'<w:pPr><w:pStyle w:val="{style}"/></w:pPr>' if style else ""
+def _docx_paragraph(text: str, bold: bool = False, style: str = "",
+                    numbered: bool = False, ilvl: int = 0) -> str:
+    inner = ""
+    if style:
+        inner += f'<w:pStyle w:val="{style}"/>'
+    if numbered:
+        inner += f'<w:numPr><w:ilvl w:val="{ilvl}"/><w:numId w:val="1"/></w:numPr>'
+    ppr = f"<w:pPr>{inner}</w:pPr>" if inner else ""
     rpr = "<w:rPr><w:b/></w:rPr>" if bold else ""
     return (f"<w:p>{ppr}<w:r>{rpr}"
             f'<w:t xml:space="preserve">{escape(text)}</w:t></w:r></w:p>')
+
+
+# An auto-numbered agreement: clauses are w:numPr list paragraphs with NO heading
+# style and NO visible number (Word generates "1.", "2." from numbering.xml).
+# Run-in titles at ilvl 0/1 are clause headings; ilvl-2 full sentences are body
+# and must be rejected. Mirrors real DOCX like the Common Paper DPA.
+_NUMBERED_DOCX_PARAS = [
+    ('Data Processing Agreement', False, "", False, 0),
+    ('This Data Processing Agreement is made as of July 7, 2024, by and between '
+     'Globex Cloud, Inc. ("Provider") and Initech Ltd. ("Customer").', False, "", False, 0),
+    ('Definitions', False, "", True, 0),
+    ('Processing.  Provider will process Customer Data only on documented '
+     'instructions from the Customer.', False, "", True, 0),
+    ('Confidentiality.  Provider will keep Customer Data confidential.', False, "", True, 1),
+    ('Subprocessors.  Provider may engage subprocessors as permitted.', False, "", True, 1),
+    ('Provider will ensure each subprocessor is bound by equivalent obligations '
+     'and remains fully liable for their performance under this Agreement.', False, "", True, 2),
+    ('Governing Law.  This Agreement is governed by the laws of the State of '
+     'New York.', False, "", True, 0),
+]
+
+
+def build_numbered_docx() -> bytes:
+    return _docx_package(
+        "".join(_docx_paragraph(t, b, style=s, numbered=n, ilvl=l)
+                for t, b, s, n, l in _NUMBERED_DOCX_PARAS)
+    )
 
 
 # A Word-styled agreement: clause structure carried by Heading1 styles (their
@@ -194,6 +227,7 @@ def build_scanned_pdf() -> bytes:
 _BINARY_FIXTURES = {
     "employment_docx.docx": build_docx,
     "heading_docx.docx": build_heading_docx,
+    "numbered_docx.docx": build_numbered_docx,
     "license_pdf.pdf": build_pdf,
     "scanned.pdf": build_scanned_pdf,
 }

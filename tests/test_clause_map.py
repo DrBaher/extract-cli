@@ -127,6 +127,29 @@ def test_roman_numeral_stripping() -> None:
         assert ex._strip_clause_number(raw) == expected, raw
 
 
+def test_two_line_article_headings() -> None:
+    # "ARTICLE N" on one line, the title on the next (common formal layout).
+    text = ("ARTICLE I\n\nDEFINITIONS\n\nCapitalized terms have meanings.\n\n"
+            "ARTICLE II\n\nCONFIDENTIALITY\n\nEach party protects info.\n\n"
+            "ARTICLE III\n\nGOVERNING LAW\n\nGoverned by New York law.")
+    clauses = ex.detect_clauses(text)
+    assert [c["title"] for c in clauses] == ["DEFINITIONS", "CONFIDENTIALITY", "GOVERNING LAW"]
+    assert all(c["tier"] == "numbered" for c in clauses)
+    # A single stray "Article 5" mention must NOT trigger the pairing.
+    assert ex._detect_two_line_articles("see Article 5 below for details") == []
+
+
+def test_expanded_vocabulary_mappings() -> None:
+    # Added from the real-corpus survey (v0.1.8).
+    assert ex._canonicalize_clause("Permitted Disclosures") == ("Exclusions", True)
+    assert ex._canonicalize_clause("Injunctive Relief") == ("Remedies", True)
+    assert ex._canonicalize_clause("General Terms") == ("Miscellaneous", True)
+    assert ex._canonicalize_clause("No Third-Party Beneficiary") == ("Third-Party Beneficiaries", True)
+    assert ex._canonicalize_clause("Export Controls") == ("Compliance with Laws", True)
+    # Must NOT over-match: a generic "General Release" is not Miscellaneous.
+    assert ex._canonicalize_clause("General Release of Claims")[1] is False
+
+
 def test_canonicalize_known_aliases() -> None:
     assert ex._canonicalize_clause("Non-Disclosure") == ("Confidentiality", True)
     assert ex._canonicalize_clause("CONFIDENTIALITY OBLIGATIONS") == ("Confidentiality", True)

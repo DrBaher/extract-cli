@@ -173,6 +173,18 @@ def test_docx_heading_styles_drive_clause_map() -> None:
     assert [p["name"] for p in result["parties"]] == ["Initech Software, Inc.", "Globex Corporation"]
 
 
+def test_numbered_docx_clauses() -> None:
+    """A DOCX whose clauses are w:numPr list paragraphs (no heading style, no
+    visible number) still yields a clause map; a deep numbered body sentence is
+    excluded."""
+    raw, text, fmt, _w = ex.load_source(FIXTURES / "numbered_docx.docx", prefer_optional=False)
+    result = ex.build_extraction(text, raw, fmt, "numbered_docx.docx")
+    canon = {c["canonical_title"] for c in result["clauses"]}
+    assert {"Definitions", "Confidentiality", "Governing Law"} <= canon
+    assert not any("remains fully liable" in c["detected_title"] for c in result["clauses"])
+    assert [p["name"] for p in result["parties"]][0] == "Globex Cloud, Inc."
+
+
 def test_html_extraction() -> None:
     raw, text, fmt, _w = ex.load_source(FIXTURES / "services_html.html")
     assert fmt == "html"

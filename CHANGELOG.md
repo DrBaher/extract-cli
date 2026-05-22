@@ -6,6 +6,33 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.8] - 2026-05-22
+
+Clause-detection breadth, driven by a 58-document real-corpus survey.
+
+### Added
+- **Auto-numbered DOCX clauses.** The DOCX reader now treats `w:numPr` list
+  paragraphs (no heading style; number generated from `numbering.xml`) as
+  clause-heading candidates, run through the same run-in/heading-likeness filter
+  as heading styles. Real agreements that number clauses this way (data
+  processing / design-partner agreements) get a clause map where they previously
+  got none; deep numbered body sentences are still excluded. New `numbered_docx`
+  fixture + tests.
+- **Two-line `ARTICLE N` headings.** A bare `ARTICLE N` / `SECTION N` line whose
+  title sits on the next line (common in formal agreements) is detected as a
+  pair — recovering, e.g., a real SEC services agreement's clause map (0 → 8).
+  Fires only with >= 2 well-formed pairs; reported under the `numbered` tier (no
+  schema change).
+- **Expanded canonical clause vocabulary** from the corpus survey: new canonical
+  clauses `Exclusions`, `Remedies`, `Restrictions`, `Taxes`,
+  `Reservation of Rights`, `Third-Party Beneficiaries`, `Feedback`,
+  `Miscellaneous`, plus aliases for `Compliance with Laws` (anti-bribery, export
+  controls) and `Data Protection` (customer data/content). ~155 more clauses map
+  across the corpus, with no observed over-matching.
+- **`CLAUDE.md`** — codebase development notes (complements AGENTS.md).
+
+No output-schema change.
+
 ## [0.1.7] - 2026-05-22
 
 ### Added

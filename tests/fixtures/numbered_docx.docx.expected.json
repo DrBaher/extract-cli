@@ -1,0 +1,142 @@
+{
+  "document": {
+    "title": "Data Processing Agreement",
+    "format": "docx",
+    "sha256": "4fea9a1f04598238f78900d19ccb0385bfc222b1e26664648c8d8ddb8cde189c",
+    "source_path": "numbered_docx.docx"
+  },
+  "parties": [
+    {
+      "name": "Globex Cloud, Inc.",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": "Provider"
+    },
+    {
+      "name": "Initech Ltd",
+      "confidence": 0.9,
+      "source": "deterministic",
+      "role": null
+    }
+  ],
+  "dates": {
+    "effective": {
+      "value": "2024-07-07",
+      "confidence": 0.85,
+      "source": "deterministic"
+    },
+    "expiration": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "term": {
+    "length": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "auto_renew": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    },
+    "notice_period_days": {
+      "value": null,
+      "confidence": 0.0,
+      "source": "none"
+    }
+  },
+  "governing_law": {
+    "value": "State of New York",
+    "confidence": 0.85,
+    "source": "deterministic"
+  },
+  "clauses": [
+    {
+      "canonical_title": "Definitions",
+      "detected_title": "## Definitions",
+      "tier": "h2",
+      "span": {
+        "start": 165,
+        "end": 181
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Processing",
+      "detected_title": "## Processing",
+      "tier": "h2",
+      "span": {
+        "start": 181,
+        "end": 284
+      },
+      "confidence": 0.71,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Confidentiality",
+      "detected_title": "## Confidentiality",
+      "tier": "h2",
+      "span": {
+        "start": 284,
+        "end": 352
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    },
+    {
+      "canonical_title": "Subprocessors",
+      "detected_title": "## Subprocessors",
+      "tier": "h2",
+      "span": {
+        "start": 352,
+        "end": 563
+      },
+      "confidence": 0.71,
+      "source": "deterministic",
+      "mapped": false
+    },
+    {
+      "canonical_title": "Governing Law",
+      "detected_title": "## Governing Law",
+      "tier": "h2",
+      "span": {
+        "start": 563,
+        "end": 645
+      },
+      "confidence": 0.95,
+      "source": "deterministic",
+      "mapped": true
+    }
+  ],
+  "defined_terms": [
+    {
+      "term": "Provider",
+      "confidence": 0.6,
+      "source": "deterministic"
+    },
+    {
+      "term": "Customer",
+      "confidence": 0.6,
+      "source": "deterministic"
+    }
+  ],
+  "value": {
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
+  },
+  "_meta": {
+    "extractor_version": "0.1.6",
+    "tiers_used": [
+      "deterministic"
+    ],
+    "llm_used": false
+  }
+}

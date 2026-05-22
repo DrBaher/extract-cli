@@ -258,8 +258,43 @@ def _qualifies_as_numbered_heading(title: str) -> bool:
     return True
 
 
+# A bare "ARTICLE N" / "SECTION N" line whose title sits on the FOLLOWING line
+# (common in formal agreements). Detected as a pair; reported under the
+# "numbered" tier so no new schema value is introduced.
+_ARTICLE_LINE_RE = re.compile(
+    r"^[ \t]*(?:ARTICLE|Article|SECTION|Section)[ \t]+(?:" + _ROMAN_RE + r"|\d{1,2})"
+    r"[ \t]*[.:–—-]?[ \t]*$",
+    re.MULTILINE,
+)
+
+
+def _detect_two_line_articles(text: str) -> List[JSON]:
+    """Pair each `ARTICLE N` marker line with the heading on the next non-blank
+    line. Fires only with >= 2 well-formed pairs, so a one-off `ARTICLE` mention
+    can't trigger it."""
+    markers = list(_ARTICLE_LINE_RE.finditer(text))
+    if len(markers) < 2:
+        return []
+    out: List[JSON] = []
+    for i, m in enumerate(markers):
+        end = markers[i + 1].start() if i + 1 < len(markers) else len(text)
+        title_line = ""
+        for ln in text[m.end():end].splitlines():
+            if ln.strip():
+                title_line = ln.strip()
+                break
+        title = _strip_clause_number(title_line)
+        # Reject when the next line is itself a numbered section header with body
+        # ("Section 1.01. Term. The term ...") or simply not heading-like.
+        if not title or not _qualifies_as_numbered_heading(title):
+            continue
+        out.append({"title": title, "detected": title_line, "anchor": title_line,
+                    "start": m.start(), "end": end, "tier": "numbered"})
+    return out
+
+
 def detect_clauses(text: str) -> List[JSON]:
-    """Run the three-tier cascade and return clauses with their detection tier.
+    """Run the clause-detection cascade and return clauses with their tier.
 
     Returns [{title, detected, anchor, start, end, tier}, ...]. `title` is the
     numbering-stripped heading; `detected` is the raw heading line as it
@@ -277,6 +312,9 @@ def detect_clauses(text: str) -> List[JSON]:
     ]
     if len(numbered) >= 2:
         return _matches_to_clauses(text, numbered, group=1, tier="numbered")
+    articles = _detect_two_line_articles(text)
+    if len(articles) >= 2:
+        return articles
     caps = [
         m for m in _ALL_CAPS_HEADING_RE.finditer(text)
         if _qualifies_as_all_caps_heading(m.group(1))
@@ -370,7 +408,8 @@ CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
         "covenant not to compete",
     ],
     "Non-Solicitation": ["non-solicit", "non-solicitation", "nonsolicitation", "no solicitation"],
-    "Data Protection": ["data protection", "data privacy", "gdpr", "privacy", "personal data"],
+    "Data Protection": ["data protection", "data privacy", "gdpr", "privacy", "personal data",
+                        "customer data", "customer content"],
     "Insurance": ["insurance"],
     "Counterparts": ["counterparts"],
     "Survival": ["survival", "survival of obligations"],
@@ -378,8 +417,22 @@ CANONICAL_CLAUSE_ALIASES: Dict[str, List[str]] = {
     "Relationship of the Parties": [
         "relationship of the parties", "independent contractor", "no partnership", "no agency",
     ],
-    "Compliance with Laws": ["compliance with laws", "compliance", "anti-corruption"],
+    "Compliance with Laws": ["compliance with laws", "compliance", "anti-corruption",
+                             "anti-bribery", "export controls", "export control"],
     "Publicity": ["publicity", "announcements", "press releases"],
+    # Added from a 58-document real-corpus survey of common unmapped titles.
+    "Exclusions": ["exclusions", "exceptions", "permitted disclosures", "required disclosures",
+                   "exclusions from confidential information"],
+    "Remedies": ["remedies", "injunctive relief", "equitable relief", "exclusive remedy",
+                 "non-exhaustive remedies", "specific performance"],
+    "Restrictions": ["restrictions", "use restrictions", "usage restrictions",
+                     "license restrictions", "restrictions and obligations"],
+    "Taxes": ["taxes", "tax matters", "withholding"],
+    "Reservation of Rights": ["reservation of rights", "reservation of right"],
+    "Third-Party Beneficiaries": ["third-party beneficiaries", "third party beneficiaries",
+                                  "no third-party beneficiary", "no third party beneficiaries"],
+    "Feedback": ["feedback", "feedback and usage data"],
+    "Miscellaneous": ["miscellaneous", "general terms", "general provisions"],
 }
 
 
