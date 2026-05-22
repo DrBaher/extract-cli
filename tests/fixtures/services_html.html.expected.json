@@ -161,7 +161,7 @@
   ],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.11",
+    "extractor_version": "0.1.12",
     "tiers_used": [
       "deterministic"
     ],

@@ -6,6 +6,18 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.12] - 2026-05-22
+
+### Security
+- **Fixed an XML entity-expansion ("billion laughs") vulnerability in `.docx`
+  parsing.** The 0.1.9 resource bounds only checked *size*, but a tiny
+  `word/document.xml` declaring a DTD with nested entities passes the size
+  check and then expands exponentially in the XML parser (both ElementTree and
+  lxml/python-docx resolve internal entities). A new `_docx_xml_guard` runs
+  before either reader and refuses any `document.xml` that declares a
+  DTD/entities (a legitimate OOXML part never does) — degrading gracefully to
+  empty text with a warning. Verified on both the stdlib and `[docx]` paths.
+
 ## [0.1.11] - 2026-05-22
 
 Polish pass.
@@ -321,6 +333,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.12]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.12
 [0.1.11]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.11
 [0.1.10]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.10
 [0.1.9]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.9

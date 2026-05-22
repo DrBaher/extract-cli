@@ -43,11 +43,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.11"
+__version__ = "0.1.12"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.11"
+EXTRACTOR_VERSION = "0.1.12"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
@@ -1110,6 +1110,32 @@ def _read_html(raw_text: str) -> str:
     return parser.get_text()
 
 
+def _docx_xml_guard(raw: bytes) -> Optional[str]:
+    """Run before EITHER docx reader on untrusted input. Returns a reason string
+    if word/document.xml is unsafe to parse, else None:
+      * decompresses past MAX_DECOMPRESSED_BYTES (zip bomb), or
+      * declares a DTD/entities -- a tiny 'billion laughs' part that passes the
+        size check but expands exponentially in the XML parser (ElementTree
+        *and* lxml/python-docx resolve internal entities). A legitimate OOXML
+        document.xml never declares one, so refusing is safe.
+    """
+    import io
+    import zipfile
+    try:
+        with zipfile.ZipFile(io.BytesIO(raw)) as z:
+            info = z.getinfo("word/document.xml")
+            if info.file_size > MAX_DECOMPRESSED_BYTES:
+                return (f"word/document.xml decompresses to {info.file_size} bytes "
+                        f"(> {MAX_DECOMPRESSED_BYTES} cap)")
+            with z.open("word/document.xml") as f:
+                head = f.read(65536)
+    except Exception:
+        return None  # not a valid zip / no document.xml -> let the readers report it
+    if re.search(rb"<!DOCTYPE|<!ENTITY", head, re.IGNORECASE):
+        return "document.xml declares a DTD/entities (XML-bomb guard)"
+    return None
+
+
 def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str, List[str]]:
     """Extract text from a .docx. Uses python-docx for higher fidelity when the
     optional [docx] extra is installed; otherwise a stdlib zipfile/XML reader
@@ -1118,6 +1144,10 @@ def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[st
     `prefer_optional=False` forces the stdlib reader regardless of what's
     installed -- used to pin reproducible golden fixtures."""
     warnings: List[str] = []
+    unsafe = _docx_xml_guard(raw)
+    if unsafe is not None:
+        warnings.append(f"could not parse .docx ({unsafe}); treating as empty")
+        return "", warnings
     if prefer_optional and importlib.util.find_spec("docx") is not None:
         try:
             mod = importlib.import_module("docx")
@@ -1216,14 +1246,7 @@ def _read_docx_stdlib(raw: bytes) -> str:
 
     w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     with zipfile.ZipFile(io.BytesIO(raw)) as z:
-        # Zip-bomb guard: the uncompressed size is in the header, so check it
-        # before reading (don't decompress GBs into memory).
-        info = z.getinfo("word/document.xml")
-        if info.file_size > MAX_DECOMPRESSED_BYTES:
-            raise ValueError(
-                f"word/document.xml decompresses to {info.file_size} bytes "
-                f"(> {MAX_DECOMPRESSED_BYTES} cap)")
-        xml = z.read("word/document.xml")
+        xml = z.read("word/document.xml")  # size/XML-bomb already vetted by _docx_xml_guard
     root = ET.fromstring(xml)
     paras: List[str] = []
     # iter over w:p in document order (includes paragraphs inside table cells).

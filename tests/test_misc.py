@@ -277,6 +277,30 @@ def test_docx_zip_bomb_guard(tmp_path: Any) -> None:
     assert any("decompress" in w for w in warnings)
 
 
+def test_docx_xml_entity_bomb_refused(tmp_path: Any) -> None:
+    # A tiny 'billion laughs' document.xml passes the size check but would expand
+    # exponentially in the XML parser; the DTD/entity guard refuses it.
+    import io
+    import zipfile
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    bomb = (
+        '<?xml version="1.0"?>\n'
+        '<!DOCTYPE r [<!ENTITY a "AAAA"><!ENTITY b "&a;&a;&a;&a;">]>\n'
+        f'<w:document xmlns:w="{w}"><w:body><w:p><w:r><w:t>&b;</w:t></w:r>'
+        '</w:p></w:body></w:document>'
+    ).encode()
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("[Content_Types].xml", "<Types/>")
+        z.writestr("word/document.xml", bomb)
+    p = tmp_path / "xmlbomb.docx"
+    p.write_bytes(buf.getvalue())
+    assert p.stat().st_size < 100_000  # tiny on disk
+    raw, text, fmt, warnings = ex.load_source(p)  # default reader path
+    assert fmt == "docx" and text == ""
+    assert any("DTD/entities" in w for w in warnings)
+
+
 def test_numbered_docx_clauses() -> None:
     """A DOCX whose clauses are w:numPr list paragraphs (no heading style, no
     visible number) still yields a clause map; a deep numbered body sentence is
