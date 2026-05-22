@@ -6,7 +6,7 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
-## [Unreleased]
+## [0.1.10] - 2026-05-22
 
 ### Fixed
 - **The `[docx]` (python-docx) reader now honors Word heading styles**, matching
@@ -296,6 +296,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.10]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.10
 [0.1.9]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.9
 [0.1.8]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.8
 [0.1.7]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.7
