@@ -1,21 +1,17 @@
 # extract-cli
 
-> Part of the contract-ops CLI suite. **extract-cli** is the suite's
-> *passport control* — the **open-loop front door**. The rest of the suite is a
-> closed loop that only handles documents it authored from its own templates;
-> `extract-cli` ingests **any** document (yours or a counterparty's foreign
-> paper) and emits a structured representation the pipeline can consume:
-> [**template-vault-cli**](https://github.com/DrBaher/template-vault-CLI) (storage) feeds
-> [**draft-cli**](https://github.com/DrBaher/draft-cli) (fill placeholders) →
-> [**nda-review-cli**](https://github.com/DrBaher/nda-review-cli) (review, redline, negotiate) →
-> [**docx2pdf-cli**](https://github.com/DrBaher/docx2pdf-cli) (DOCX → PDF) →
-> [**sign-cli**](https://github.com/DrBaher/sign-cli) (signing + audit).
-> Cross-version drift detection via [**compare-cli**](https://github.com/DrBaher/compare-cli).
-> [Showcase site](https://cli.drbaher.com/).
+> **Ingest any contract — yours or a counterparty's foreign paper — and get
+> structured JSON.** Hand `extract-cli` a `.md` / `.txt` / `.html` / `.docx` /
+> `.pdf` and it returns the parties, dates, term, governing law, a normalized
+> **clause map**, defined terms, and a headline value — each with a `confidence`
+> and a `source`, so you **verify, don't trust**. Stdlib-only, single-file, local-first.
 >
-> `extract-cli` sits **upstream of review**: it turns foreign paper into the
-> suite's canonical, structured vocabulary. Its output is a **cross-CLI data
-> contract** — see [`docs/INTEROP.md`](docs/INTEROP.md) and
+> Works standalone — and also composes with the [contract-ops CLI suite](https://cli.drbaher.com/)
+> as its **open-loop front door**: it turns foreign paper into the suite's canonical,
+> structured vocabulary that [**nda-review-cli**](https://github.com/DrBaher/nda-review-cli),
+> [**compare-cli**](https://github.com/DrBaher/compare-cli), and
+> [**contract-vault**](https://github.com/DrBaher/contract-vault-cli) can consume. Its
+> output is a **cross-CLI data contract** — see [`docs/INTEROP.md`](docs/INTEROP.md) and
 > [`docs/spec/extract-output.schema.json`](docs/spec/extract-output.schema.json).
 
 ```

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""extract-cli -- the open-loop front door of the contract-ops CLI suite.
+"""extract-cli -- ingest any contract and emit structured JSON.
 
-The suite is a contract lifecycle (store -> draft -> review -> diff -> convert
--> sign) that, until now, only handled documents it authored from its own
-templates. `extract-cli` is "passport control": it ingests ANY document --
-yours or a counterparty's foreign paper -- in .md/.txt/.html (natively), .docx,
-or .pdf, and emits a structured JSON representation that the rest of the suite
-(nda-review-cli, compare-cli, contract-vault) consumes.
+Give it ANY document -- yours or a counterparty's foreign paper -- in
+.md/.txt/.html (natively), .docx, or .pdf, and it emits a structured JSON
+representation: parties, dates, term, governing law, a normalized clause map,
+defined terms, and a headline value, each with a confidence and a source.
+
+It works standalone, and it also composes with the contract-ops CLI suite as the
+open-loop front door: the structured output is a cross-CLI data contract that
+siblings (nda-review-cli, compare-cli, contract-vault) can consume.
 
 Two extraction tiers:
   * DETERMINISTIC (default, always on): parties, dates, defined-term inventory,
@@ -2226,7 +2228,7 @@ def cmd_demo(args: argparse.Namespace) -> int:
     raw = DEMO_DOCUMENT.encode("utf-8")
     result = build_extraction(DEMO_DOCUMENT, raw, "markdown", "(bundled demo fixture)")
     if not args.silent:
-        _eprint(_bold("extract-cli demo") + " -- the suite's passport control")
+        _eprint(_bold("extract-cli demo") + " -- structured JSON from any contract")
         _eprint(_dim(
             "  A foreign document comes in (here: a bundled NDA). The deterministic\n"
             "  tier maps its clauses onto the suite's canonical vocabulary and pulls\n"
@@ -2378,8 +2380,9 @@ def build_catalog() -> JSON:
         "bin": "extract",
         "version": __version__,
         "description": (
-            "Open-loop front door of the contract-ops CLI suite: ingest any contract "
-            "(.md/.txt/.html/.docx/.pdf) and emit structured JSON."
+            "Ingest any contract (.md/.txt/.html/.docx/.pdf) and emit structured JSON "
+            "-- parties, clauses, dates, governing law -- with a confidence and source "
+            "on every field."
         ),
         "commands": [
             {
