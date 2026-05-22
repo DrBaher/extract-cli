@@ -231,10 +231,11 @@ Line coverage tells you the code runs; it doesn't tell you the extraction is
 | effective date | accuracy 1.00 |
 | governing law | accuracy 1.00 |
 | jurisdiction (normalized) | accuracy 1.00 |
-| clauses (recall on verified sections) | 0.45 |
+| clauses (recall on verified sections) | 0.86 |
 
-Clause recall is the honest weak spot — heading detection on dense HTML
-exhibits still misses sections. A test (`tests/test_eval.py`) gates these so
+Clause recall improved sharply once the HTML reader learned to treat
+emphasis (heading tags, <b>/<u>, CSS font-weight/underline) as section
+headings; the residual misses are compound/combined heading titles. A test (`tests/test_eval.py`) gates these so
 accuracy can't silently regress.
 
 ## Development

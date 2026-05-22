@@ -327,6 +327,25 @@ def test_html_extraction() -> None:
     assert {"Payment", "Termination", "Confidentiality", "Governing Law"} <= canon
 
 
+def test_html_emphasis_headings_become_clauses() -> None:
+    """Section headings marked by emphasis (heading tag, <b>/<u>, or CSS
+    font-weight/underline) -- with or without a leading '(a)'/'1.' token -- are
+    emitted as `## ` headings and detected as clauses."""
+    html = (
+        "<html><body>"
+        "<p><b>MASTER AGREEMENT</b></p>"
+        "<p>(a) <u>Confidentiality</u>. The parties keep information secret.</p>"
+        "<p><font style=\"font-weight:bold\">Payment</font>. Fees are due monthly.</p>"
+        "<p>(c) <span style=\"text-decoration:underline\">Governing Law</span>. "
+        "Governed by the laws of the State of Delaware.</p>"
+        "</body></html>"
+    )
+    text = ex._read_html(html)
+    result = ex.build_extraction(text, html.encode(), "html", "x.html")
+    canon = {c["canonical_title"] for c in result["clauses"] if c["mapped"]}
+    assert {"Confidentiality", "Payment", "Governing Law"} <= canon
+
+
 def test_html_detected_by_content_sniff(tmp_path: Any) -> None:
     # HTML masquerading as .txt (e.g. a SEC EDGAR full submission) is sniffed.
     p = tmp_path / "exhibit.txt"

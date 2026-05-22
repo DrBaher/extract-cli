@@ -6,6 +6,19 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.14] - 2026-05-22
+
+### Improved
+- **HTML clause detection now recognizes emphasis-marked headings.** Real HTML
+  contracts (e.g. SEC EDGAR exhibits) mark section headings with emphasis, not
+  `##`/numbers — a heading tag, `<b>`/`<strong>`/`<u>`, or **CSS**
+  (`font-weight:bold` / `text-decoration:underline`), often with a leading
+  `(g)` / `1.` token and the body run-in. The HTML reader now emits such blocks
+  as `## ` headings (splitting run-in title from body; a lone emphasized block
+  is treated as a title and left plain so numbered/ALL-CAPS sections still win).
+  On the accuracy benchmark this lifts **clause recall 0.45 → 0.86** (F1 0.62 →
+  0.93), precision still 1.00. Residual misses are compound/combined headings.
+
 ## [0.1.13] - 2026-05-22
 
 ### Added
@@ -354,6 +367,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.14]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.14
 [0.1.13]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.13
 [0.1.12]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.12
 [0.1.11]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.11

@@ -43,11 +43,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.13"
+EXTRACTOR_VERSION = "0.1.14"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
@@ -1069,11 +1069,24 @@ def _detect_format(path: Path, raw: bytes) -> str:
     return base
 
 
+def _looks_like_heading_text(s: str) -> bool:
+    """Lenient: short, few words, not a full sentence -- used to decide whether
+    an *emphasized* HTML block is a clause heading."""
+    s = s.strip().rstrip(".:;,")
+    return 2 <= len(s) <= 90 and len(s.split()) <= 10
+
+
 class _HTMLTextExtractor(html.parser.HTMLParser):
-    """Stdlib HTML -> text: drops script/style, frames block elements with blank
-    lines (so clause-heading detection still works), and unescapes entities."""
+    """Stdlib HTML -> text. Drops script/style, frames blocks with blank lines,
+    unescapes entities, and -- crucially for clause detection -- emits blocks
+    that are emphasized (a heading tag, or text wrapped in <b>/<strong>/<u>) as
+    Markdown `## headings`. Real contracts (e.g. SEC HTML exhibits) mark section
+    headings with emphasis, not `##`/numbers, so without this the cascade sees
+    only plain lines. A run-in heading (emphasized lead + body in one block) is
+    split into `## Title` + body."""
 
     _SKIP = {"script", "style", "head", "title", "meta", "link", "noscript"}
+    _EMPH = {"b", "strong", "u", "h1", "h2", "h3", "h4", "h5", "h6"}
     _BLOCK = {
         "p", "div", "br", "tr", "li", "h1", "h2", "h3", "h4", "h5", "h6",
         "section", "article", "table", "ul", "ol", "blockquote", "pre", "hr",
@@ -1082,32 +1095,94 @@ class _HTMLTextExtractor(html.parser.HTMLParser):
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
-        self._parts: List[str] = []
+        self._lines: List[str] = []
+        self._runs: List[Tuple[bool, str]] = []  # (emphasized, text) for current block
         self._skip = 0
+        self._emph = 0
+        # Per-tag-name LIFO stack of "did this open tag add emphasis?", so an
+        # emphasis opened by a CSS style (not just a <b>/<u> tag) is closed by
+        # the right end tag even when many <font>/<span> nest.
+        self._emph_stack: Dict[str, List[bool]] = {}
+
+    @staticmethod
+    def _style_is_emph(attrs: Any) -> bool:
+        for name, value in attrs:
+            if name == "style" and value:
+                v = value.lower()
+                if ("font-weight:bold" in v.replace(" ", "") or "font-weight:700" in v.replace(" ", "")
+                        or "text-decoration:underline" in v.replace(" ", "")):
+                    return True
+        return False
+
+    def _flush_block(self) -> None:
+        runs, self._runs = self._runs, []
+        full = re.sub(r"\s+", " ", "".join(t for _e, t in runs)).strip()
+        if not full:
+            self._lines.append("")
+            return
+        # Standalone emphasized block (a heading tag or fully <b>/<u>/styled text).
+        if all(e for e, t in runs if t.strip()) and _looks_like_heading_text(_strip_clause_number(full)):
+            self._lines.append("## " + _strip_clause_number(full))
+            return
+        # Run-in heading: an optional leading numbering token ("(g)", "1.") then
+        # an emphasized title, then the body in the same block.
+        i, saw_emph = 0, False
+        while i < len(runs):
+            emph, txt = runs[i]
+            if not txt.strip():
+                i += 1
+            elif emph:
+                saw_emph = True
+                i += 1
+            elif not saw_emph and re.fullmatch(r"\(?[0-9A-Za-z]{1,4}\)?[.)]?", txt.strip()):
+                i += 1  # skip a clause-number/letter prefix
+            else:
+                break
+        lead = _strip_clause_number(re.sub(r"\s+", " ", "".join(t for _e, t in runs[:i])).strip())
+        rest = re.sub(r"\s+", " ", "".join(t for _e, t in runs[i:])).strip()
+        if saw_emph and lead and rest and _looks_like_heading_text(lead):
+            self._lines.append("## " + lead)
+            self._lines.append(rest)
+        else:
+            self._lines.append(full)
 
     def handle_starttag(self, tag: str, attrs: Any) -> None:
         if tag in self._SKIP:
             self._skip += 1
-        elif tag in self._BLOCK:
-            self._parts.append("\n")
+            return
+        if tag in self._BLOCK:
+            self._flush_block()
+        added = tag in self._EMPH or self._style_is_emph(attrs)
+        self._emph_stack.setdefault(tag, []).append(added)
+        if added:
+            self._emph += 1
 
     def handle_endtag(self, tag: str) -> None:
         if tag in self._SKIP and self._skip > 0:
             self._skip -= 1
-        elif tag in self._BLOCK:
-            self._parts.append("\n")
+            return
+        stack = self._emph_stack.get(tag)
+        if stack:
+            if stack.pop() and self._emph > 0:
+                self._emph -= 1
+        if tag in self._BLOCK:
+            self._flush_block()
 
     def handle_data(self, data: str) -> None:
         if self._skip == 0:
-            self._parts.append(data)
+            self._runs.append((self._emph > 0, data))
 
     def get_text(self) -> str:
-        # Strip each line; collapse runs of blank lines to a single blank line
-        # (gives ALL-CAPS / numbered headings their blank-line frame).
-        lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in "".join(self._parts).split("\n")]
+        self._flush_block()
+        # A lone emphasized heading is almost always the document title, not a
+        # section scheme -- downgrade it to plain text so the numbered/ALL-CAPS
+        # tiers can still detect the real sections (matches the >=2 threshold the
+        # other fallback tiers use).
+        if sum(1 for ln in self._lines if ln.startswith("## ")) < 2:
+            self._lines = [ln[3:] if ln.startswith("## ") else ln for ln in self._lines]
         out: List[str] = []
         blank = False
-        for ln in lines:
+        for ln in self._lines:
             if ln:
                 out.append(ln)
                 blank = False
