@@ -759,7 +759,7 @@ def extract_governing_law(text: str) -> JSON:
     if not m:
         return _none_field()
     juris = re.sub(r"\s+", " ", m.group(1).strip().rstrip(".,")).strip()
-    if not juris:
+    if not juris:  # pragma: no cover - the capture group requires a leading letter
         return _none_field()
     return _field(juris, 0.85)
 
@@ -880,7 +880,7 @@ def extract_defined_terms(text: str) -> List[JSON]:
             # Reject sentence-like or lowercase-y captures.
             if len(term) < 2 or len(term.split()) > 6:
                 continue
-            if not term[0].isupper():
+            if not term[0].isupper():  # pragma: no cover - the regexes require an uppercase lead
                 continue
             seen.setdefault(term, None)
             if len(seen) >= 50:
@@ -1088,7 +1088,7 @@ def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[st
                 all_bold = bool(para.runs) and all(
                     getattr(r, "bold", False) for r in para.runs if (r.text or "").strip())
                 _emit_docx_paragraph(lines, line, style, numbered, all_bold)
-            for table in getattr(doc, "tables", []):
+            for table in getattr(doc, "tables", []):  # pragma: no cover - [docx] fidelity
                 for row in table.rows:
                     for cell in row.cells:
                         ct = (cell.text or "").strip()
@@ -1224,7 +1224,7 @@ def _read_pdf(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str
             warnings.append(f"pypdf read failed ({e}); falling back to stdlib reader")
     try:
         text = _read_pdf_stdlib(raw)
-    except Exception as e:
+    except Exception as e:  # pragma: no cover - defensive; stdlib reader is bomb-guarded
         warnings.append(f"could not parse .pdf ({e}); treating as empty")
         return "", warnings
     return text, warnings
@@ -1357,7 +1357,7 @@ def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, s
         raise ExtractError(f"path is a directory, not a file: {path}")
     try:
         size = path.stat().st_size
-    except OSError:
+    except OSError:  # pragma: no cover - defensive; path.exists() already passed
         size = 0
     if size > MAX_INPUT_BYTES:
         raise ExtractError(
@@ -2330,7 +2330,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if hasattr(_stream, "reconfigure"):
             try:
                 _stream.reconfigure(encoding="utf-8", errors="replace")
-            except Exception:
+            except Exception:  # pragma: no cover - defensive
                 pass
 
     argv = sys.argv[1:] if argv is None else argv
@@ -2373,7 +2373,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         if first in known:
             parser = build_parser()
             args = parser.parse_args(argv)
-            if not getattr(args, "func", None):
+            if not getattr(args, "func", None):  # pragma: no cover - argparse always sets func
                 parser.print_help()
                 return 0
         else:
@@ -2385,7 +2385,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     except BrokenPipeError:  # e.g. `extract foo.md | head`
         try:
             sys.stdout.close()
-        except Exception:
+        except Exception:  # pragma: no cover - defensive
             pass
         return 0
     except KeyboardInterrupt:  # pragma: no cover
@@ -2393,5 +2393,5 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 130
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

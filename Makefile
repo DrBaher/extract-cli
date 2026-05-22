@@ -31,8 +31,11 @@ test-quick:
 	$(PYTHON) -m pytest -x -q -k "not property"
 
 coverage:
+	# Install the [docx]/[pdf] extras so the fidelity-reader paths execute too;
+	# without them two extras-only branches stay uncovered (98% vs 100%).
+	$(PIP) install -q -e ".[dev,docx,pdf]"
 	$(PYTHON) -m coverage run --source=extract_cli -m pytest -q
-	$(PYTHON) -m coverage report -m
+	$(PYTHON) -m coverage report -m --fail-under=100
 
 typecheck:
 	$(PYTHON) -m mypy --strict extract_cli.py

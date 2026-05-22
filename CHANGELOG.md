@@ -20,6 +20,17 @@ the output schema require a major version bump**; new optional fields are minor.
   latter asserts the python-docx and stdlib readers produce the same clause map).
   No output-schema change.
 
+### Tests / quality
+- **Line coverage raised to 100%** (was 92%/94%). Added a targeted test battery
+  for the remaining reachable branches (color/`FORCE_COLOR`, `_warn` silent,
+  date/jurisdiction/title/clause edge returns, LLM request/parse/clause-map
+  branches, PDF `TJ`-array + stream/budget edges, HTML malformed fallback, DOCX
+  empty paragraph, `_is_low_signal` branches, CLI silent/help paths). Genuinely
+  unreachable defensive lines and `[docx]`/`[pdf]`-extra fidelity branches are
+  marked `# pragma: no cover`. `make coverage` now installs the extras and
+  enforces `--fail-under=100`; a CI `coverage` job gates it. No code-behavior or
+  schema change.
+
 ## [0.1.9] - 2026-05-22
 
 ### Security / robustness
