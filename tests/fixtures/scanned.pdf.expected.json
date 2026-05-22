@@ -55,7 +55,7 @@
   "amounts": [],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.8",
+    "extractor_version": "0.1.9",
     "tiers_used": [
       "deterministic"
     ],
