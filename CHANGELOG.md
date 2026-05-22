@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [Unreleased]
+
+### Fixed
+- **The `[docx]` (python-docx) reader now honors Word heading styles**, matching
+  the stdlib reader. Previously the python-docx path concatenated paragraph text
+  and dropped `Heading1-9`/`Title` styles and `w:numPr` numbering, so installing
+  the `[docx]` extra produced an **empty clause map** on heading-styled Word
+  contracts (worse than the no-extra stdlib reader). Both readers now share one
+  emitter (`_emit_docx_paragraph`) that turns heading-styled / auto-numbered
+  paragraphs into `## headings`, so the two paths agree. New tests:
+  `test_emit_docx_paragraph` and `test_docx_readers_agree_on_clause_map` (the
+  latter asserts the python-docx and stdlib readers produce the same clause map).
+  No output-schema change.
+
 ## [0.1.9] - 2026-05-22
 
 ### Security / robustness

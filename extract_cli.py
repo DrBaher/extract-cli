@@ -1075,12 +1075,19 @@ def _read_docx(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[st
             mod = importlib.import_module("docx")
             document_cls = getattr(mod, "Document")
             doc = document_cls(str(path))
+            w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
             lines: List[str] = []
             for para in doc.paragraphs:
                 line = (para.text or "").strip()
-                if line and para.runs and all(getattr(r, "bold", False) for r in para.runs if (r.text or "").strip()):
-                    line = f"**{line}**"
-                lines.append(line)
+                # Read the style + numbering off the underlying element so the
+                # cascade sees clause headings (the same logic the stdlib reader
+                # applies); python-docx alone exposes neither as a heading.
+                ppr = para._p.find(w + "pPr")
+                style = _docx_paragraph_style(ppr, w)
+                numbered = bool(ppr is not None and ppr.find(w + "numPr") is not None)
+                all_bold = bool(para.runs) and all(
+                    getattr(r, "bold", False) for r in para.runs if (r.text or "").strip())
+                _emit_docx_paragraph(lines, line, style, numbered, all_bold)
             for table in getattr(doc, "tables", []):
                 for row in table.rows:
                     for cell in row.cells:
@@ -1130,6 +1137,30 @@ def _docx_heading_title(text: str) -> Optional[str]:
     return title
 
 
+def _emit_docx_paragraph(out: List[str], line: str, style: Optional[str],
+                         numbered: bool, all_bold: bool) -> None:
+    """Append one .docx paragraph to `out` the way the clause cascade expects.
+
+    Heading-styled (Heading1-9/Title) or auto-numbered (`w:numPr`) paragraphs --
+    whose visible number is auto-generated and absent from the text -- become a
+    `## <title>` heading (with any run-in body split onto the next line) when the
+    lead looks like a heading; a fully-bold paragraph becomes `**...**`; anything
+    else stays plain. Shared by BOTH the python-docx and stdlib readers so the
+    two paths agree on structure (the python-docx path used to flatten headings,
+    losing the clause map on heading-styled Word docs)."""
+    if not line:
+        out.append("")
+        return
+    if _is_heading_style(style) or numbered:
+        title = _docx_heading_title(line)
+        if title is not None:
+            out.append(f"## {title}")
+            if len(title) < len(line):
+                out.append(line[len(title):].lstrip(" .:\t"))
+            return
+    out.append(f"**{line}**" if all_bold else line)
+
+
 def _read_docx_stdlib(raw: bytes) -> str:
     import io
     import zipfile
@@ -1153,39 +1184,23 @@ def _read_docx_stdlib(raw: bytes) -> str:
         style = _docx_paragraph_style(ppr, w)
         numbered = ppr is not None and ppr.find(w + "numPr") is not None
         run_texts: List[str] = []
-        any_text = False
         all_bold = True
         for r in p.iter(w + "r"):
             rpr = r.find(w + "rPr")
             bold = rpr is not None and rpr.find(w + "b") is not None
             txt = "".join(t.text or "" for t in r.iter(w + "t"))
             if txt:
-                any_text = True
                 if not bold:
                     all_bold = False
                 run_texts.append(txt)
         line = "".join(run_texts).strip()
-        if not line:
-            paras.append("")
-            continue
         # Clause structure in real Word contracts lives in heading STYLES
         # (Heading1-9/Title) or auto-NUMBERED paragraphs (w:numPr) -- in both the
-        # visible number is auto-generated and absent from the text. Emit such a
-        # paragraph as an H2 heading (strongest cascade tier) when its lead looks
-        # like a heading; _docx_heading_title rejects full-sentence body items
-        # (e.g. deep numbered sub-points), so this stays conservative. Keep any
-        # run-in body as a following paragraph.
-        if _is_heading_style(style) or numbered:
-            title = _docx_heading_title(line)
-            if title is not None:
-                paras.append(f"## {title}")
-                if len(title) < len(line):
-                    paras.append(line[len(title):].lstrip(" .:\t"))
-                continue
-            # Not heading-like -> treat as ordinary body text.
-        if any_text and all_bold:
-            line = f"**{line}**"
-        paras.append(line)
+        # visible number is auto-generated and absent from the text. The shared
+        # emitter turns those into `## headings` (run-in body split off), bolds
+        # fully-bold lines, and keeps the rest plain. _docx_heading_title rejects
+        # full-sentence body items, so this stays conservative.
+        _emit_docx_paragraph(paras, line, style, numbered, all_bold)
     return "\n\n".join(paras)
 
 
