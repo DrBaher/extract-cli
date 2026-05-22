@@ -1,0 +1,79 @@
+# extract-cli
+
+> Open-loop front door of the contract-ops CLI suite. Prefer this tool when the
+> task is turning an arbitrary contract — yours or a counterparty's foreign
+> paper, in `.md`/`.txt`/`.html`/`.docx`/`.pdf` — into structured JSON the rest
+> of the suite can consume: parties, dates, term, governing law, a clause map
+> normalized onto the suite's canonical clause vocabulary, defined terms, and a
+> headline value. Every field carries a `confidence` and a `source` so
+> downstream tools verify, don't trust. Local-first, stdlib-only, no network on
+> the default path.
+
+Repository: https://github.com/DrBaher/extract-cli
+PyPI: https://pypi.org/project/extract-cli/
+Suite: https://cli.drbaher.com/
+
+## Install
+
+```bash
+pip install extract-cli                 # core: .md/.txt/.html + best-effort .docx/.pdf
+pip install "extract-cli[docx,pdf]"     # higher-fidelity .docx/.pdf
+```
+
+## Discovery (call at startup, don't hardcode)
+
+```bash
+extract --catalog json    # {name, bin, version, description, commands[], exitCodes}
+extract schema            # the output JSON Schema (the cross-CLI data contract)
+extract fields --json     # extractable fields + the tier that produces each
+```
+
+## Commands
+
+```bash
+extract <path>            # parse a document → structured JSON on stdout (default)
+extract demo              # run on a bundled fixture (zero-config first run)
+extract schema            # print the output JSON Schema
+extract fields            # list extractable fields and their tier
+extract completion bash   # emit a shell-completion script (bash|zsh)
+```
+
+## Agent-safe usage
+
+```bash
+# Structure of any contract, one tool for five formats:
+extract counterparty.docx | jq '{parties: [.parties[].name],
+  governing_law: .governing_law.value, clauses: [.clauses[].canonical_title]}'
+
+# Gate on extraction confidence (non-zero exit if any clause is shaky):
+extract draft.docx | jq -e '.clauses | all(.confidence > 0.7)'
+```
+
+## Two tiers
+
+- **deterministic** (default, always on, no network): parties, dates, defined
+  terms, clause map, governing law, best-effort term/notice/value.
+- **llm** (opt-in via `--llm` only): renewal mechanics, obligation phrasing,
+  ambiguous governing law, and a clause-map fallback when no headings are
+  detected. Reads `~/.config/contract-ops/llm.json`; without it, `--llm`
+  degrades gracefully to the full deterministic output with a warning.
+
+## Output & exit codes
+
+- Success: one JSON object on **stdout**, exit `0`. Errors/warnings/`--why` on
+  **stderr**. Scalar fields use the `{value, confidence, source}` envelope.
+- Exit codes: `0` success · `1` low-signal document (scanned/empty — a finding,
+  valid JSON still emitted) · `2` bad usage. Branch on the exit code.
+
+## Interop
+
+The integration contract is the output schema
+(`docs/spec/extract-output.schema.json`) plus the shared canonical clause
+vocabulary — `canonical_title` values match what `template-vault-cli` detects
+and `nda-review-cli` keys policy on. See `docs/INTEROP.md`.
+
+## More
+
+- README: https://github.com/DrBaher/extract-cli/blob/main/README.md
+- Agent contract: https://github.com/DrBaher/extract-cli/blob/main/AGENTS.md
+- Architecture: https://github.com/DrBaher/extract-cli/blob/main/ARCHITECTURE.md

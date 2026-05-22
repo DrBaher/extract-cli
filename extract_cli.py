@@ -43,7 +43,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
@@ -995,7 +995,9 @@ def _read_docx_stdlib(raw: bytes) -> str:
     paras: List[str] = []
     # iter over w:p in document order (includes paragraphs inside table cells).
     for p in root.iter(w + "p"):
-        style = _docx_paragraph_style(p.find(w + "pPr"), w)
+        ppr = p.find(w + "pPr")
+        style = _docx_paragraph_style(ppr, w)
+        numbered = ppr is not None and ppr.find(w + "numPr") is not None
         run_texts: List[str] = []
         any_text = False
         all_bold = True
@@ -1012,17 +1014,21 @@ def _read_docx_stdlib(raw: bytes) -> str:
         if not line:
             paras.append("")
             continue
-        # Word heading styles carry the clause structure (their numbers are
-        # auto-generated, so absent from text). Emit them as H2 so the clause
-        # cascade's strongest tier detects them; keep any run-in body too.
-        if _is_heading_style(style):
+        # Clause structure in real Word contracts lives in heading STYLES
+        # (Heading1-9/Title) or auto-NUMBERED paragraphs (w:numPr) -- in both the
+        # visible number is auto-generated and absent from the text. Emit such a
+        # paragraph as an H2 heading (strongest cascade tier) when its lead looks
+        # like a heading; _docx_heading_title rejects full-sentence body items
+        # (e.g. deep numbered sub-points), so this stays conservative. Keep any
+        # run-in body as a following paragraph.
+        if _is_heading_style(style) or numbered:
             title = _docx_heading_title(line)
             if title is not None:
                 paras.append(f"## {title}")
                 if len(title) < len(line):
                     paras.append(line[len(title):].lstrip(" .:\t"))
                 continue
-            # Sentence carrying a heading style -> treat as ordinary body text.
+            # Not heading-like -> treat as ordinary body text.
         if any_text and all_bold:
             line = f"**{line}**"
         paras.append(line)
@@ -1851,7 +1857,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
 _SUBCOMMANDS = ("schema", "fields", "demo", "completion")
 _GLOBAL_FLAGS = (
     "--json", "--why", "-q", "--silent", "--no-color", "--llm",
-    "--format", "--fields", "--no-confidence", "-V", "--version", "-h", "--help",
+    "--format", "--fields", "--no-confidence", "--catalog",
+    "-V", "--version", "-h", "--help",
 )
 
 _BASH_COMPLETION = r"""# extract-cli bash completion
@@ -1860,7 +1867,7 @@ _extract_completions() {
     local cur prev
     cur="${COMP_WORDS[COMP_CWORD]}"
     local cmds="schema fields demo completion"
-    local flags="--json --why -q --silent --no-color --llm --format --fields --no-confidence -V --version -h --help"
+    local flags="--json --why -q --silent --no-color --llm --format --fields --no-confidence --catalog -V --version -h --help"
     if [ "$COMP_CWORD" -eq 1 ]; then
         COMPREPLY=( $(compgen -W "${cmds}" -- "${cur}") $(compgen -f -- "${cur}") )
         return 0
@@ -1886,7 +1893,7 @@ _extract() {
     )
     flags=(
         '--json' '--why' '-q' '--silent' '--no-color' '--llm'
-        '--format' '--fields' '--no-confidence' '-V' '--version'
+        '--format' '--fields' '--no-confidence' '--catalog' '-V' '--version'
     )
     if (( CURRENT == 2 )); then
         _describe 'command' cmds
@@ -1923,6 +1930,102 @@ def _completion_handler(argv: List[str]) -> int:
         for f in _GLOBAL_FLAGS:
             print(f)
     return 0
+
+
+# ---------------------------------------------------------------------------
+# Machine-readable catalog (`extract --catalog json`)
+# ---------------------------------------------------------------------------
+# The suite's shared discovery contract: agents call `extract --catalog json`
+# at startup to learn every command and flag instead of hardcoding them
+# (parallel to `nda-review-cli --catalog json`, `docx2pdf --catalog json`,
+# `sign --catalog json`). It is a STABLE contract — keep it complete and
+# accurate; `tests/test_cli.py` asserts it never drifts from the real parser.
+
+
+def _flag(name: str, *, aliases: Optional[List[str]] = None, help: str = "",
+          default: Any = None, choices: Optional[List[str]] = None,
+          required: bool = False) -> JSON:
+    return {
+        "name": name,
+        "aliases": aliases if aliases is not None else [],
+        "help": help,
+        "required": required,
+        "default": default,
+        "choices": choices,
+    }
+
+
+# Output flags shared by `extract` and `demo` (mirror _add_common_output_flags).
+_CATALOG_OUTPUT_FLAGS: Tuple[JSON, ...] = (
+    _flag("--json", help="Force JSON output to stdout (the default)."),
+    _flag("--format", default="json", choices=["json", "table"],
+          help="Output format (default: json)."),
+    _flag("--no-confidence",
+          help="Omit confidence/source markers (reduced convenience view)."),
+    _flag("--why", help="Print a rationale block to stderr."),
+    _flag("--silent", aliases=["-q", "--quiet"],
+          help="Suppress non-error diagnostics (and the human table)."),
+)
+
+
+def build_catalog() -> JSON:
+    """The machine-readable catalog emitted by `extract --catalog json`."""
+    extract_flags: List[JSON] = [
+        _flag("--llm",
+              help="Opt-in LLM enrichment of fuzzy fields (renewal mechanics, "
+                   "obligations, and a clause-map fallback). Off by default; the "
+                   "deterministic core is fully useful without it."),
+        _flag("--fields", default="",
+              help="Comma-separated subset of top-level fields to emit "
+                   "(e.g. parties,clauses,governing_law)."),
+        *_CATALOG_OUTPUT_FLAGS,
+    ]
+    return {
+        "name": CLI_NAME,
+        "bin": "extract",
+        "version": __version__,
+        "description": (
+            "Open-loop front door of the contract-ops CLI suite: ingest any contract "
+            "(.md/.txt/.html/.docx/.pdf) and emit structured JSON."
+        ),
+        "commands": [
+            {
+                "name": "extract",
+                "help": "Parse a document into structured JSON. The default action: "
+                        "`extract <path>` works without naming the subcommand. "
+                        "Positional: path to a .md/.txt/.html/.docx/.pdf file.",
+                "flags": extract_flags,
+            },
+            {
+                "name": "schema",
+                "help": "Print the output JSON Schema — the cross-CLI output contract.",
+                "flags": [],
+            },
+            {
+                "name": "fields",
+                "help": "List extractable fields and the tier that produces each.",
+                "flags": [_flag("--json", help="Emit the field list as JSON.")],
+            },
+            {
+                "name": "demo",
+                "help": "Run extraction on a bundled fixture (zero-config first run).",
+                "flags": list(_CATALOG_OUTPUT_FLAGS),
+            },
+            {
+                "name": "completion",
+                "help": "Emit a shell-completion script. Positional: bash | zsh.",
+                "flags": [],
+            },
+        ],
+        "exitCodes": {
+            "0": "success",
+            "1": "low-signal document — no high-signal fields (parties/clauses/dates) "
+                 "could be extracted; e.g. a scanned/image-only or empty file. "
+                 "A finding, not a crash.",
+            "2": "bad usage / user-actionable error (unreadable path, bad flag value, "
+                 "unsupported completion shell).",
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -2024,6 +2127,23 @@ def main(argv: Optional[List[str]] = None) -> int:
     # Hidden completion handler (kept out of argparse / --help).
     if argv and argv[0] == "__complete":
         return _completion_handler(argv[1:])
+
+    # `extract --catalog json` (or `--catalog=json`): the suite discovery
+    # contract. Intercepted before routing so it works as a bare global flag.
+    catalog_fmt: Optional[str] = None
+    for i, a in enumerate(argv):
+        if a == "--catalog":
+            catalog_fmt = argv[i + 1] if i + 1 < len(argv) else "json"
+            break
+        if a.startswith("--catalog="):
+            catalog_fmt = a.split("=", 1)[1] or "json"
+            break
+    if catalog_fmt is not None:
+        if catalog_fmt != "json":
+            _eprint(_red("error:") + f" unknown --catalog format {catalog_fmt!r}; supported: json")
+            return 2
+        print(json.dumps(build_catalog(), indent=2, ensure_ascii=True))
+        return 0
 
     if not argv:
         build_parser().print_help()

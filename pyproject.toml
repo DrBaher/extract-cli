@@ -4,13 +4,16 @@ build-backend = "hatchling.build"
 
 [project]
 name = "extract-cli"
-version = "0.1.6"
+version = "0.1.7"
 description = "Open-loop front door of the contract-ops CLI suite: ingest any contract (.md/.txt/.html/.docx/.pdf) and emit structured JSON."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "DrBaher", email = "Drbaher@gmail.com" }]
-keywords = ["contract", "extraction", "nda", "legal", "cli", "json", "clause"]
+keywords = [
+    "contract-ops", "agent-first", "cli", "legal-tech",
+    "contract", "extraction", "nda", "legal", "json", "clause",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -64,6 +67,8 @@ include = ["extract_cli.py"]
 include = [
     "extract_cli.py",
     "README.md",
+    "AGENTS.md",
+    "llms.txt",
     "LICENSE",
     "CHANGELOG.md",
     "ARCHITECTURE.md",

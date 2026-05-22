@@ -118,6 +118,7 @@ only stdlib `urllib`, so there is no runtime dependency.
 | Concern | Convention |
 |---|---|
 | Primary result | **stdout** (JSON payload, default) |
+| Discovery | `extract --catalog json` (commands/flags, the suite contract) + `extract schema` / `extract fields --json` |
 | `--why`, warnings, errors | **stderr** |
 | `--why` envelope | plain-text `[why] <header>` block (as in template-vault-cli / draft-cli) |
 | Quiet | `-q` / `--silent` / `--quiet` aliases |

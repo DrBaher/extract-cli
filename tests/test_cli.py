@@ -1,13 +1,30 @@
 """End-to-end CLI tests driving extract_cli.main() in-process."""
 from __future__ import annotations
 
+import argparse
 import json
-from typing import Any
+from typing import Any, Set
 
 import pytest
 
 import extract_cli as ex
 from tests.conftest import FIXTURES
+
+
+def _parser_optstrings(subparser: argparse.ArgumentParser) -> Set[str]:
+    """Every documented --flag a subparser accepts (excluding -h/--help and SUPPRESS)."""
+    out: Set[str] = set()
+    for action in subparser._actions:
+        if isinstance(action, argparse._SubParsersAction):
+            continue
+        if not action.option_strings:  # positional
+            continue
+        if action.help == argparse.SUPPRESS:
+            continue
+        if {"-h", "--help"} & set(action.option_strings):
+            continue
+        out.update(action.option_strings)
+    return out
 
 
 def _has_key(obj: Any, key: str) -> bool:
@@ -109,3 +126,48 @@ def test_why_goes_to_stderr(capsys: pytest.CaptureFixture[str]) -> None:
     assert "[why]" in cap.err
     assert "[why]" not in cap.out  # stdout stays clean JSON
     json.loads(cap.out)
+
+
+def test_catalog_json_shape(capsys: pytest.CaptureFixture[str]) -> None:
+    assert ex.main(["--catalog", "json"]) == 0
+    cat = json.loads(capsys.readouterr().out)
+    assert set(cat) >= {"name", "bin", "version", "description", "commands", "exitCodes"}
+    assert cat["name"] == "extract-cli"
+    assert cat["bin"] == "extract"
+    assert cat["version"] == ex.__version__
+    assert [c["name"] for c in cat["commands"]] == [
+        "extract", "schema", "fields", "demo", "completion"
+    ]
+    for c in cat["commands"]:
+        assert set(c) == {"name", "help", "flags"} and c["help"]
+    assert cat["exitCodes"]["0"] and cat["exitCodes"]["1"] and cat["exitCodes"]["2"]
+
+
+def test_catalog_defaults_to_json(capsys: pytest.CaptureFixture[str]) -> None:
+    assert ex.main(["--catalog"]) == 0          # bare --catalog → json
+    json.loads(capsys.readouterr().out)
+    assert ex.main(["--catalog=json"]) == 0     # = form
+    json.loads(capsys.readouterr().out)
+
+
+def test_catalog_rejects_unknown_format(capsys: pytest.CaptureFixture[str]) -> None:
+    assert ex.main(["--catalog", "yaml"]) == 2
+    assert "error:" in capsys.readouterr().err
+
+
+def test_catalog_does_not_drift_from_parser() -> None:
+    """The catalog must list exactly the commands/flags the real parser accepts."""
+    cat = ex.build_catalog()
+    parser = ex.build_parser()
+    sub_action = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
+    real: dict[str, argparse.ArgumentParser] = dict(sub_action.choices)
+    cat_by_name = {c["name"]: c for c in cat["commands"]}
+    assert set(cat_by_name) == set(real)  # no fictional or undocumented commands
+    for name, subparser in real.items():
+        documented: Set[str] = set()
+        for f in cat_by_name[name]["flags"]:
+            documented.add(f["name"])
+            documented.update(f["aliases"])
+        assert documented == _parser_optstrings(subparser), f"flag drift in `{name}`"

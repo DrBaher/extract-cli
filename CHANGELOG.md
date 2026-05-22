@@ -6,6 +6,25 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.7] - 2026-05-22
+
+### Added
+- **`extract --catalog json` — the suite's shared discovery contract.** Emits
+  `{name, bin, version, description, commands[], exitCodes}` (mirroring
+  `nda-review-cli --catalog json` / `docx2pdf --catalog json` /
+  `sign --catalog json`) so agents can learn every command and flag at startup
+  instead of hardcoding them. A test asserts the catalog never drifts from the
+  real argparse parser. Also added to the bash/zsh completion flag lists.
+- **`AGENTS.md`** — the agent contract in the suite's canonical section order
+  (output contract / exit codes / discovery / failure → recovery).
+- **`llms.txt`** — machine-readable tool summary at the repo root.
+
+### Changed
+- Packaging: added the suite-standard keywords (`contract-ops`, `agent-first`,
+  `legal-tech`); README now opens with `## Run this` / `## Where to go next`;
+  `--catalog json` documented in the README and `docs/INTEROP.md`. No schema or
+  extraction-logic change (`extractor_version` unchanged).
+
 ## [0.1.6] - 2026-05-21
 
 ### Docs

@@ -23,6 +23,30 @@ ingest (extract) → review → diff → convert → sign
    ^you are here
 ```
 
+## Run this
+
+```bash
+pipx run extract-cli demo        # zero-config: extract a bundled NDA → structured JSON
+# or, installed:  pip install extract-cli && extract demo
+```
+
+That prints the full output contract — parties, dates, term, governing law, and
+a clause map normalized onto the suite's canonical vocabulary — for a bundled
+fixture, with no setup and no network. Point it at your own file with
+`extract path/to/contract.docx`.
+
+## Where to go next
+
+- **New here?** Keep reading — [What it does](#what-it-does) and
+  [The two extraction tiers](#the-two-extraction-tiers).
+- **Driving it from an agent?** See [`AGENTS.md`](AGENTS.md) and call
+  `extract --catalog json` at startup to discover commands/flags. The output
+  shape is locked by [`docs/spec/extract-output.schema.json`](docs/spec/extract-output.schema.json).
+- **Wiring it into the pipeline?** See [`docs/INTEROP.md`](docs/INTEROP.md) — the
+  contract is the output schema + the shared clause vocabulary.
+- **Contributing / building a sibling CLI?** [`CONTRIBUTING.md`](CONTRIBUTING.md)
+  and [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## What it does
 
 Give it a contract in **`.md` / `.txt` / `.html`** (native), **`.docx`**, or
@@ -77,6 +101,7 @@ for them.
 
 ```bash
 extract <path>            # parse a document → structured JSON on stdout (default)
+extract --catalog json    # machine-readable catalog of commands/flags (agents call at startup)
 extract schema            # print the output JSON Schema (the cross-CLI contract)
 extract fields            # list extractable fields and their tier
 extract demo              # run on a bundled fixture and show the narrative
@@ -87,6 +112,7 @@ extract completion bash   # emit a shell-completion script (bash|zsh)
 
 | Flag | Meaning |
 |---|---|
+| `--catalog json` | Print the machine-readable command/flag catalog and exit (the suite discovery contract; agents call this at startup) |
 | `--llm` | Opt-in LLM enrichment of fuzzy fields (off by default) |
 | `--fields a,b,c` | Emit only a subset of top-level fields (e.g. `parties,clauses`) |
 | `--format json\|table` | Output format (default `json`) |
