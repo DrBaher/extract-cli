@@ -1,0 +1,754 @@
+<DOCUMENT>
+<TYPE>EX-10.7
+<SEQUENCE>11
+<FILENAME>g73965ex10-7.txt
+<DESCRIPTION>BLADE - MASTER SERVICES AGREEMENT
+<TEXT>
+<PAGE>
+                                                                    EXHIBIT 10.7
+
+                            MASTER SERVICES AGREEMENT
+                              SPORG/KPMG CONSULTING
+
+         THIS MASTER SERVICES AGREEMENT ("Agreement"), dated as of August 31,
+2001,(the "Effective Date"), is between Blade Internet Ventures Inc., a Nevada
+corporation having its principal place of business at 120-1050 West Pender
+Street, Vancouver BC V6E 3S7 and doing business as SPORG.com ("Client"), and
+KPMG CONSULTING LP, an Ontario limited partnership with an office at Waterpark
+Place, Suite 1100, 20 Bay Street, Toronto Ontario M5 J 2X9 ("Consultant").
+
+         WHEREAS, Client desires to retain Consultant to perform certain
+management consulting services for Client; and
+
+         WHEREAS, Consultant desires to perform such consulting services for
+Client.
+
+NOW THEREFORE, in consideration of the foregoing premises, and the
+mutual covenants and agreements set forth herein, the parties hereto
+agree as follows:
+
+         1.       PURPOSE OF ENGAGEMENT.
+
+                  (a)      Client agrees to retain Consultant to perform the
+consulting services for Client, on a task by task basis (the "Services"), and
+Consultant agrees to perform the Services on the terms and subject to the
+conditions and assumptions set forth in this Agreement. During the term of this
+Agreement, Client and Consultant will develop and agree upon statements of work
+defining the Services and a description of the deliverables (the "Deliverables")
+to be provided by Consultant, Consultant's compensation, additional terms and
+conditions, if any, applicable to a particular engagement and such other details
+as the parties deem appropriate (each a "Statement of Work"). A Statement of
+Work may provide a time schedule for completion of the Services required
+thereunder (the "Schedule") and specifications for Deliverables to be provided
+thereunder (the "Specifications"). Statements of Work which are from time to
+time agreed upon shall reference this Agreement and shall be executed by the
+parties and attached hereto and shall form a part hereof.
+
+                  (b)      Each party shall designate a "Project Manager" who
+shall be the principal point of contact between the parties for all matters
+relating to an engagement. Each Statement of Work shall contain an initial
+designation of a Project Manager for each party. A party may designate a new
+Project Manager by written notice to the other party.
+
+                  (c)      Unless otherwise provided in a Statement of Work,
+Consultant shall provide the Services at Client's facility identified in the
+applicable Statement of Work. When Services are provided at a Client facility,
+Client shall provide appropriate work space and other facilities such as
+computer support consistent with the requirements of the Services to be provided
+under the Statement of Work. Consultant shall cause its personnel at Client's
+facility to
+
+
+
+<PAGE>
+
+comply with (i) Client's safety and security rules and other rules applicable to
+those working in the facility, and (ii) Client's commercially reasonable
+policies concerning access to and security of any Client computer system to
+which Consultant may have access; provided, that Client has provided Consultant
+with copies of such rules and policies.
+
+                  (d)      Either party may request changes that affect the
+scope or duration of the Services relating to any Statement of Work, including
+changes in the Specifications and changes in the Deliverables to be delivered.
+Either party also may request a change in the Schedule without changing the
+scope of the Services relating to the applicable Statement of Work. If either
+party requests any such change, Consultant shall notify Client if it believes
+that the requested change will require an adjustment either in the fees to be
+paid to Consultant with respect to the applicable Statement of Work and/or to
+the applicable Schedule. The parties shall then negotiate in good faith a
+reasonable and equitable adjustment in the applicable fees, Schedule and
+Specifications. Consultant shall continue work pursuant to the existing
+Statement of Work, and shall not be bound by any change requested by either
+party, until such change has been accepted in writing by the other party. In the
+case of an accepted change involving a Statement of Work being performed at a
+fixed price, additional Services that Consultant provides as a result of such
+change will be billed on a time and materials ("T&M") basis at Consultant's
+standard rates, unless expressly agreed otherwise by the parties.
+
+                  (e)      The obligations of Client in connection with a
+particular engagement shall be set forth in the applicable Statement of Work.
+Client agrees to perform such obligations in accordance with, and subject to,
+such Statement of Work. Client acknowledges that when a Statement of Work
+provides that Client's personnel are to work with Consultant's personnel in
+connection with an engagement, Client's failure to assign Client personnel
+having skills commensurate with their role with respect to such engagement could
+adversely affect Consultant's ability to provide the Services. To the extent
+that Client's failure to assign such personnel, or other failure to perform its
+obligations under a Statement of Work, interferes with Consultant's ability to
+perform its obligations in accordance with the Specifications, milestone dates,
+if any, shall be adjusted accordingly and, for fixed fee engagements, additional
+Services required shall be billed at Consultant's standard rates on a T&M basis,
+unless otherwise agreed between the parties.
+
+                  (f)      Client acknowledges and agrees that Consultant may,
+in performing its obligations pursuant to this Agreement, be dependent upon or
+use data, material, and other information furnished by Client without any
+independent investigation or verification thereof, and that Consultant shall be
+entitled to rely upon the accuracy and completeness of such information in
+performing the Services. Consultant, in performing the Services, will be making
+recommendations and providing advice, but all decisions as to implementing such
+advice and recommendations shall be made by and be the sole responsibility of
+the Client.
+
+                  (g)      Client undertakes to supply or make available all
+information and material that Consultant may reasonably request for purposes of
+providing the Services.
+
+
+                                                                               2
+<PAGE>
+
+         2.       TERM. The term of this Agreement shall begin on the date
+hereof and shall continue until terminated by either party pursuant to Section 6
+hereof.
+
+         3.       CONSULTANT'S COMPENSATION.
+
+                  (a)      During the term of this Agreement, Client agrees to
+compensate Consultant as set forth in each Statement of Work. Consultant may be
+compensated on a time and materials or fixed price basis if provided for in the
+Statement of Work. In addition, Client shall reimburse Consultant for its actual
+out-of-pocket expenses as reasonably incurred by Consultant in connection with
+its performance of the Services.
+
+                  (b)      Upon the execution of a Statement of Work, an
+"initial payment" shall become due and shall be comprised of (i) a percentage of
+the anticipated total fees under the Statement of Work and (ii) any anticipated
+significant out-of-pocket expenses such as license fees or other fees related to
+software and/or hardware procurements; each as set forth in the "Payment of
+Fees" section of the relevant Statement of Work. Consultant shall thereafter
+bill Client every month for time and materials engagements or at agreed upon
+milestones for fixed price engagements, as set forth in the relevant Statement
+of Work, with any credit balance to be applied to the final invoice or refunded,
+as the case may be. Client shall pay as set forth in the SOW. Any past due
+amount is subject to a late charge in the amount of one and a half (1.5) percent
+per month or the maximum amount permissible by law, whichever is less.. Without
+limiting its rights or remedies hereunder, and notwithstanding the parties'
+rights under Section 6 hereof, Consultant reserves the right to immediately
+suspend or terminate Services in the event of Client's failure to make timely
+payment.
+
+                  (c)      All fees, expenses and other charges payable to
+Consultant hereunder do not include any sales, goods and services, use, excise,
+value added or other applicable taxes, tariffs or duties, payment of which shall
+be the sole responsibility of Client (excluding any applicable taxes based on
+Consultant's net income or taxes arising from the employment or independent
+contractor relationship between Consultant and its personnel). In the event that
+such taxes, tariffs or duties are assessed against Consultant, Client shall
+reimburse Consultant for any such amounts paid by Consultant or, prior to the
+payment of such amounts by Consultant, provide Consultant with valid tax
+exemption certificates with respect thereto. If Client is required by law to
+make any tax deduction, withholding or payment from any amount paid or payable
+by Client to Consultant under this Agreement, the amount paid or payable to
+Consultant shall be grossed-up to the extent necessary to ensure that Consultant
+receives and retains, free of liability, a previously agreed upon net amount
+equal to the amount that Consultant would have received and retained had no tax
+deduction or withholding been made.
+
+                  (d)      Consultant shall maintain reasonably complete and
+accurate records of the fees and expenses charged to Client with respect to the
+Services under each Statement of Work. Except as otherwise provided under
+applicable law, Consultant shall retain such records for two years after the
+completion or termination of the Services to which they pertain and shall make
+such records available to Client during normal business hours upon reasonable
+advance written notice. Consultant shall cooperate in any audit of such records
+that Client may undertake; provided, however, that: (i) any such audit shall be
+at Client's sole expense; (ii) no such audit may
+
+
+                                                                               3
+<PAGE>
+
+occur more than once in any twelve (12) month period; and (iii) Consultant shall
+have the right to approve the auditor used for any such audit, with such
+approval not to be unreasonably withheld.
+
+         4.       OWNERSHIP OF MATERIALS RELATED TO SERVICES; ACCEPTANCE.
+
+                  (a)      The parties agree, subject to the terms of this
+Agreement, that upon full and final payment by Client for the Deliverables
+required by a Statement of Work and of all sums owed to Consultant in connection
+with the performance of the Services, all documents, designs, inventions,
+computer programs, computer systems, data, computer documentation and other
+tangible materials authored or prepared by Consultant for Client as the
+Deliverables required by a Statement of Work, but expressly excluding any
+Consultant's Information as defined below, shall become the sole and exclusive
+property of Client and Consultant undertakes to assign to Client, upon such full
+and final payment, all intellectual property rights in such Deliverables.
+Consultant further agrees upon such full and final payment, to waive in favor of
+Client any and all moral rights that it may have in the Deliverables. Consultant
+agrees to render, at Client's sole cost and expense, all reasonably required
+assistance to Client to protect the rights herein above described.
+
+                  (b)      Client acknowledges that Consultant provides
+consulting and development services to other clients and agrees that nothing in
+this Agreement shall be deemed or construed to prevent Consultant from carrying
+on such business. In particular, Client agrees that, notwithstanding anything to
+the contrary set forth herein: (i) Consultant shall have the right to retain a
+copy of each of the Deliverables for its records; (ii) as part of Consultant's
+provision of the Services hereunder, Consultant may utilize proprietary works of
+authorship, pre-existing or otherwise, that have not been created specifically
+for Client, including without limitation software, methodologies, templates,
+flowcharts, architecture designs, tools, specifications, drawings, sketches,
+models, samples, records and documentation, as well as copyrights, trademarks,
+service marks, ideas, concepts, know-how, techniques, knowledge or data, and any
+derivatives thereof, which originate from or have been, developed or purchased
+by Consultant or by third parties under contract to Consultant (all of the
+foregoing, collectively, "Consultant's Information"); (iii) Consultant's
+Information and Consultant's administrative communications, records, files and
+working papers relating to the Services shall remain the sole and exclusive
+property of Consultant; and (iv) Client hereby grants to Consultant a perpetual,
+royalty-free, irrevocable, worldwide, non-exclusive license to create, use and
+sublicense derivative works derived from the Deliverables, so long as in doing
+so Consultant does not use any trade-marks, logos or Confidential Information of
+Client or disclose Client's identity or Confidential Information (as defined
+hereinafter) of Client.
+
+                  (c)      To the extent that Consultant incorporates any of
+Consultant's Information into the Deliverables, and effective upon full and
+final payment by Client for the Deliverables required by a Statement of Work and
+of all sums owed to Consultant in connection with the performance of the
+Services, Consultant hereby grants to Client a perpetual, royalty-free,
+irrevocable, worldwide, non-exclusive, transferable license to use, execute,
+reproduce, modify, revise, alter, translate, merge into other systems or
+software, display, perform, distribute internally or externally, sell copies of
+and prepare derivative works from the Consultant's Information (including both
+source and object code in respect of any software forming part of Consultant's
+
+
+                                                                               4
+<PAGE>
+
+Information) as an integral part of the Deliverables provided by Consultant
+pursuant to a Statement of Work as these Deliverables may be modified, revised,
+altered, translated, merged, re-cast, transformed or adapted from time to time,
+and to authorize and sublicense others from time to time to do any of the
+foregoing , subject to the same terms and conditions hereunder; PROVIDED THAT
+nothing in this Section 4 shall be deemed to permit Client and/or its
+sublicensees to sublicense or otherwise alienate the Consultant's Information as
+a discrete entity or entities, separate and apart from the Deliverables
+delivered by Consultant pursuant to a Statement of Work as these Deliverables
+may be modified, revised, altered, translated, merged, re-cast, transformed, or
+adapted from time to time.
+
+                  (d)      Any assignment of ownership rights, license rights or
+waiver of moral rights in the Deliverables pursuant to this Section 4 shall be
+deemed to occur at the conclusion and fulfillment of the particular Statement of
+Work defining such Deliverables and upon full and final payment by Client for
+the Deliverables required by a Statement of Work and of all sums owed to
+Consultant in connection with the performance of the Services, of Consultant's
+compensation as provided under Section 3 hereof and is expressly conditioned on
+Client's compliance with all material terms of this Agreement and such Statement
+of Work. In the event Client refuses or otherwise fails to remit to Consultant
+any portion of fees or expenses due under such Statement of Work, no assignment,
+license or waiver of any rights in the Deliverables shall occur in favor of
+Client and Consultant shall retain all intellectual property rights, including
+moral rights, in such Deliverables.
+
+                  (e)      When Consultant has completed the Services under a
+Statement of Work, including all required Deliverables, Client, with
+Consultant's cooperation and assistance, may conduct acceptance tests to verify
+whether the Deliverables substantially conform to the applicable Specifications.
+Client shall have fifteen (15) days after completion of the applicable Services,
+or such other period as may be mutually agreed upon as set forth in the
+applicable Statement of Work (the "Acceptance Period"), to test the
+Deliverables. If Client notifies Consultant in writing of any material
+non-conformities with the Specifications in any of the Deliverables
+(collectively "Non-conformities") within the applicable Acceptance Period,
+Consultant promptly shall use reasonable efforts to correct such
+Non-conformities at its own expense and notify Client when the corrections are
+complete. Client then shall have the right to test the corrected Deliverables,
+together with any other Deliverables, as upon the initial completion of the
+applicable Services. If Client does not notify Consultant in writing of any
+material Non-conformities within the Acceptance Period or if Client uses the
+Deliverables in a production environment or otherwise in connection with
+Client's conduct of its business, Client shall be deemed to have accepted the
+Deliverables. Should Consultant fail to correct a Non-conformity within thirty
+(30) days of receiving written notice of it, Client may terminate the Services
+under the applicable Statement of Work and Consultant's maximum liability to
+Client for failing to correct such Nonconformity shall be to refund the fees and
+expenses paid by Client to Consultant for the portion of the Deliverables that
+are Non-conforming.
+
+         5.       CONSULTANT'S LIMITED WARRANTIES AND WARRANTY DISCLAIMER.
+
+
+                                                                               5
+<PAGE>
+
+                  (a)      Consultant warrants to Client that Consultant's
+performance of the Services called for by this Agreement, to its knowledge, does
+not and shall not violate any applicable law, rule, or regulation;
+
+                  (b)      Consultant warrants to Client that Consultant has
+full authority and sufficient rights, except for rights respecting programs,
+data and materials provided by Client or identified by Consultant as furnished
+to Client by third-party vendors, to grant and convey the rights granted to
+Client under Section 4 hereof;
+
+                  (c)      Consultant warrants to Client that, for a period of
+ninety calendar (90) days following its acceptance by Client (the "Warranty
+Period"), any software (and associated documentation) developed by Consultant
+for Client hereunder shall conform to the Specifications applicable thereto in
+all material respects. In the event Client notifies Consultant in writing of a
+breach of the foregoing warranty during the Warranty Period, Consultant shall
+promptly use reasonable efforts to remedy such breach at no additional expense
+to Client. In the event that Consultant, after using reasonable efforts, is
+unable to remedy such breach, Consultant's sole liability to Client in
+connection with such breach shall be to refund the amount paid by Client for
+such software. Notwithstanding the foregoing, Consultant shall have no
+obligation or liability to Client under this warranty to the extent that a
+nonconformity results from: (i) Client's use of such software in a manner
+inconsistent with the documentation therefor; (ii) alterations or modifications
+made to such software by Client without the written approval of Consultant;
+(iii) defects in any third party software; (iv) malfunctions of Client computer
+hardware or system environment occurring through no fault of Consultant; or (v)
+storage, operation, use or maintenance of such software in a manner or an
+environment inconsistent with the specifications and instructions of Consultant
+at the time such software is delivered to Client. Consultant does not warrant
+that any of the software provided by Consultant will meet Client's requirements
+or that the operation of any such software will be uninterrupted and/or
+error-free.
+
+                  (d)      THE EXPRESS WARRANTIES IN THIS AGREEMENT SHALL BE IN
+LIEU OF ALL OTHER WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY, NON-INFRINGEMENT, INTEROPERABILITY
+AND FITNESS FOR A PARTICULAR PURPOSE.
+
+         6.       TERMINATION.
+
+                  (a)      At any time that there is no uncompleted Statement of
+Work outstanding, either party may terminate this Agreement for any or no reason
+upon fifteen (15) days advance written notice to the other.
+
+                  (b)      In addition, either party may terminate this
+Agreement or any outstanding Statement of Work, upon thirty (30) days written
+notice to the other party, in the event such other party breaches a material
+term of this Agreement or any Statement of Work and such breach remains uncured
+at the end of such thirty (30) day period.
+
+
+                                                                               6
+<PAGE>
+
+                  (c)      Upon termination of this Agreement in accordance with
+Sections 6(a) or 6(b) above, Client shall pay Consultant all fees and expenses
+which have been earned or incurred in connection with the performance of the
+Services through the effective date of such termination.
+
+         7.       LIABILITIES AND REMEDIES FOR INFRINGEMENT.
+
+                  (a)      Consultant hereby agrees to indemnify, hold harmless
+and defend Client from and against any and all claims, liabilities, losses,
+expenses (including reasonable attorneys' fees), fines, penalties, taxes or
+damages (collectively "Liabilities") asserted against Client by a third party to
+the extent such Liabilities result from the claim by a third party that the
+Deliverables infringe upon any third party's trade secret, trademark, service
+mark, copyright or patent issued or in existence as of the date of this
+Agreement (collectively, an "Intellectual Property Right"); provided, that
+Client: (i) promptly notifies Consultant of any third party claim subject to
+indemnification hereunder, (ii) gives Consultant the right to control and direct
+the preparation of a defense, the defense and any settlement of any such claim,
+(iii) gives full cooperation to Consultant for the defense of same, and (iv)
+complies with Consultant's direction to cease any use of the Deliverables which,
+in Consultant's sole judgment, is likely to be ruled an infringement of a third
+party's Intellectual Property Right. The foregoing provisions shall not apply to
+any infringement arising out of: (i) use of the Deliverables other than in
+accordance with applicable documentation or instructions supplied by Consultant
+or for other than Client's internal purposes; (ii) any alteration, modification
+or revision of the Deliverables not expressly authorized in writing by
+Consultant; (iii) Client's failure to use or implement corrections or
+enhancements to the Deliverables made available by Consultant; (iv) Client's
+distribution, marketing, or use of the Deliverables for the benefit of third
+parties; or (iii) the combination of the Deliverables with materials not
+supplied by Consultant.
+
+                  (b)      In case any of the Deliverables or any portion
+thereof is held, or in Consultant's reasonable opinion is likely to be held, in
+any such suit to constitute infringement of a third party's Intellectual
+Property Right, Consultant may within a reasonable time, at its option, either:
+(i) secure for Client the right to continue the use of such infringing item; or
+(ii) replace, at Consultant's sole expense, such item with a substantially
+equivalent non-infringing item or modify such item so that it becomes
+non-infringing. In the event Consultant is, in Consultant's reasonable
+discretion, unable to either procure the right to continued use of the allegedly
+infringing item or replace the allegedly infringing item as provided in clauses
+(i) and (ii) of the immediately preceding sentence, the allegedly infringing
+item shall be returned to Consultant, and Consultant's maximum liability for
+such infringement shall be to refund to Client the amount paid to Consultant for
+such item.
+
+                  (c)      The provisions of this Section 7 state Consultant's
+entire liability and Client's sole and exclusive remedies with respect to any
+infringement or claim of infringement.
+
+         8.       LIMITATIONS OF LIABILITY; INDEMNIFICATION BY CLIENT.
+
+                  (a)      IN NO EVENT SHALL CONSULTANT BE LIABLE TO CLIENT FOR
+DAMAGES ARISING OUT OF OR IN ANY WAY RELATED TO CONSULTANT'S PERFORMANCE OR
+NONPERFORMANCE OF SERVICES UNDER A STATEMENT OF
+
+
+                                                                               7
+<PAGE>
+
+WORK IN EXCESS OF THE AMOUNT OF FEES PAID TO CONSULTANT FOR THE PERFORMANCE OF
+SUCH SERVICES PURSUANT TO SUCH STATEMENT OF WORK.
+
+                  (b)      NEITHER PARTY, NOR THEIR RESPECTIVE MEMBERS, AGENTS,
+EMPLOYEES, OFFICERS AND DIRECTORS, SHALL HAVE ANY LIABILITY TO THE OTHER PARTY
+FOR ANY SPECIAL, INCIDENTAL, PUNITIVE, EXEMPLARY, INDIRECT OR CONSEQUENTIAL
+DAMAGES, COSTS, EXPENSES OR LOSSES (INCLUDING WITHOUT LIMITATION, LOST PROFITS
+AND OPPORTUNITY COSTS) EVEN IF SUCH PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
+
+                  (c)      Client hereby agrees to indemnify, hold harmless and
+defend Consultant and any member, director, officer, employee or agent thereof,
+from and against all Liabilities incurred by or asserted against Consultant or
+any of the above persons in connection with any third party claim to the extent
+such Liabilities result from : (i) the use of the Deliverables other than in
+accordance with applicable documentation or instructions supplied by Consultant
+or for other than Client's internal purposes; (ii) any altered, modified or
+revised version of the Deliverables that was not expressly authorized in writing
+by Consultant; (iii) Client's failure to use or implement corrections or
+enhancements to the Deliverables made available by Consultant; (iv) Client's
+distribution, marketing, or use of the Deliverables for the benefit of any third
+party; or (v) the combination of the Deliverables with materials not provided by
+Consultant. Consultant agrees to (i) promptly notify Client of any third party
+claim subject to indemnification hereunder, (ii) give Client the right to
+control and direct, at Client's expense, the preparation of a defense, the
+defense, and any settlement of any such claim on terms reasonably acceptable to
+Consultant; and (iii) give full cooperation to Client, at Client's expense, for
+the defense of same.
+
+                  (d)      In the event that Client provides Consultant with
+access to software, specifications, content or other Client-provided materials
+("Client Materials"), Client hereby agrees to indemnify, hold harmless and
+defend Consultant from and against any and all Liabilities incurred by or
+asserted against Consultant in connection with any third party claim relating to
+the use by Consultant of the Client Materials, including but not limited to, a
+third party claim that the Client Materials infringe upon such third party's
+trade secret, trademark, service mark, copyright, patent or other intellectual
+property rights.
+
+         9.       CONFIDENTIAL INFORMATION. "Confidential Information" means all
+documents, software and documentation, reports, financial or other data,
+records, forms, tools, products, services, methodologies, present and future
+research, technical knowledge, marketing plans, trade secrets, and other
+materials obtained by Consultant and Client from each other in the course of
+performing any Services, whether tangible or intangible and whether or not
+stored, compiled, or memorialized physically, electronically, graphically, in
+writing, or by any means now known or later invented. Confidential Information
+includes without limitation records and information and Consultant's Information
+(i) that has been marked as proprietary or confidential; (ii) whose confidential
+nature has been made known by Client or Consultant; or (iii) that due to its
+character and nature, a reasonable person under like circumstances would treat
+as confidential. Notwithstanding the foregoing, Confidential Information does
+not include information which: (i) is already known to the recipient at the time
+of disclosure; (ii) is or becomes publicly known
+
+
+                                                                               8
+<PAGE>
+
+through no wrongful act or failure of recipient; (iii) is independently
+developed by recipient without benefit of the other party's Confidential
+Information; or (iv) is received from a third party which is not under and does
+not thereby breach an obligation of confidentiality. Each party agrees to
+protect the other party's Confidential Information at all times and in the same
+manner as each protects the confidentiality of its own proprietary and
+confidential materials, but in no event with less than a reasonable standard of
+care. Consultant will deliver to Client all of Client's Confidential Information
+other than Consultant's Information licensed to Client pursuant to Section 4,
+and all copies thereof (and all other property obtained from or through Client)
+when Client requests the same or immediately upon termination of this Agreement,
+whichever occurs earlier, except for one copy thereof that Consultant may retain
+for its records. Client will deliver to Consultant all of Consultant's
+Confidential Information and all copies thereof (and all other property obtained
+from or through Consultant) when Consultant requests the same or immediately
+upon termination of this Agreement, whichever occurs earlier. Neither party
+shall, except with respect to those of its employees with a need to know under
+this Agreement, use or disclose to any person, firm or entity any Confidential
+Information of the other party without such other party's express, prior written
+permission; provided, however, that notwithstanding the foregoing, Consultant
+may disclose Confidential Information to the extent that it is required to be
+disclosed pursuant to a statutory or regulatory provision or court order. The
+confidentiality restrictions and obligations imposed by this Section 9 shall
+terminate two (2) years after the expiration or termination of this Agreement.
+
+         10.      INDEPENDENT CONTRACTOR. Consultant is performing the Services
+as an independent contractor and not as an employee of Client and none of
+Consultant's personnel shall be entitled to receive any compensation, benefits
+or other incidents of employment from Client. Subject to Section 3(c),
+Consultant shall be responsible for all taxes and other expenses arising from
+the employment or independent contractor relationship between Consultant and its
+personnel and the rendition of Services hereunder by such personnel to Client.
+Nothing in this Agreement shall be deemed to constitute a partnership, joint
+venture, or fiduciary relationship between Client and Consultant, nor shall
+anything in this Agreement be deemed to create an agency relationship between
+Consultant and Client. Neither Consultant nor Client shall be or become liable
+or bound by any representation, act or omission whatsoever of the other.
+
+         11.      ASSIGNMENT AND SUBCONTRACTING. Neither party shall assign or
+transfer this Agreement or any of its obligations hereunder without the other
+party's express prior written consent. Notwithstanding the foregoing, Consultant
+shall have the right to assign this Agreement without prior consent or approval
+of Client to KPMG Consulting's parent or any wholly-owned affiliate and/or to
+the successor to substantially all of the assets and business of Consultant.
+Consultant shall have the right at any time and without prior consent or
+approval of Client to subcontract all or part of the Services and/or
+Deliverables to be provided under this Agreement.
+
+         12.      NOTICES. All notices, requests, demands or other
+communications permitted or required hereunder shall be in writing and shall be
+by personal delivery, a nationally recognized overnight courier service or
+facsimile or electronic transmission, return receipt requested. Notices shall be
+deemed given upon the earlier of actual receipt, two (2) days after deposit with
+the courier service or receipt by sender of confirmation of facsimile
+transmission. Notices shall be sent to the addresses listed below, or to such
+other address as either party may specify in writing:
+
+
+                                                                               9
+<PAGE>
+
+         If to Client:
+
+                  BLADE INTERNET VENTURES INC.
+                  120-1050 West Pender Street
+                  Vancouver BC V6E 3S7
+                  Attention Eric Freeman
+
+         If to Consultant:
+
+                  KPMG CONSULTING, LP
+                  Waterpark Place, Suite 1100,
+                  20 Bay Street,
+                  Toronto Ontario M5 J 2X9
+                  Attention: Joe Natale
+
+         with a copy to:
+
+                  KPMG CONSULTING, INC.
+                  KPMG Consulting Legal Department
+                  International Law Counsel
+                  KPMG Tower
+                  1676 International Drive
+                  McLean, Virginia 22102
+                  Attention: General Counsel
+
+         13.      SEVERABILITY; GOVERNING LAW. In the event that any term or
+provision of this Agreement shall be held to be invalid, void or unenforceable,
+then the remainder of this Agreement shall not be affected, impaired or
+invalidated, and each such other term and provision of this Agreement shall be
+valid and enforceable to the fullest extent permitted by law. This Agreement
+shall be governed by and construed in accordance with the laws of the Province
+of Ontario and the federal laws of Canada applicable therein, without regard to
+the conflict of laws provisions thereof, and any proceeding between the parties
+not subject to arbitration pursuant to Section 20 hereof shall take place in the
+Province of Ontario, which shall be the exclusive venue for any such dispute.
+However, if this Agreement is executed by the office of Consultant located in
+Quebec, this Agreement shall be governed and construed under the laws of the
+Province of Quebec, and the federal laws of Canada applicable therein, without
+regard to the conflicts of laws provisions thereof. The United Nations
+Convention on Contracts for the International Sale of Goods shall not apply to
+this Agreement.
+
+         14.      INTEGRATION; ORDER OF PRECEDENCE. This Agreement, including
+any Statements of Work entered into pursuant hereto, constitutes the entire
+agreement of the parties hereto with respect to its subject matter and
+supersedes all prior and contemporaneous representations, proposals,
+discussions, and communications, whether oral or in writing. In the event of a
+conflict between the provisions of this Agreement and the specific provisions
+set forth in a Statement of Work, the provisions of the Agreement shall control,
+except to the extent the
+
+
+                                                                              10
+<PAGE>
+
+provisions in a Statement of Work expressly provide otherwise. This Agreement
+may be modified only in writing and shall be enforceable in accordance with its
+terms when signed by each of the parties hereto.
+
+         15.      NON-SOLICITATION OF EMPLOYEES. Neither party shall, during the
+term of this Agreement and for one (1) year after its termination, solicit for
+hire as an employee, consultant or otherwise any of the other party's personnel
+who have had direct involvement with the Services, without such other party's
+express written consent.
+
+         16.      INSURANCE. Throughout the term of this Agreement, Consultant
+shall at its own expense, obtain and maintain the following insurance: (a)
+Comprehensive General Liability, with coverage of not less than $1,000,000 per
+occurrence and $2,000,000 in the aggregate for bodily injury and property damage
+(b) Motor Vehicle Liability insurance for owned, non-owned and hired vehicles,
+with limits of not less than $1,000,000 combined single limit for bodily injury
+and property damage; (c) Workers' Compensation insurance in the amount required
+by statute for all states in which the Services are to be performed when such
+states impose a statutory obligation to be so insured (d) Professional Liability
+Insurance with limits of not less than $1,000,000 per occurrence, and $2,000,000
+in the aggregate. Consultant will endeavor to notify Client in writing of any
+material change to its coverage as described herein. Consultant shall furnish
+certificates of insurance evidencing coverage or other acceptable evidence of
+self-insurance to Client upon request.
+
+         17.      PRESS RELEASES AND CLIENT LIST REFERENCE. Neither party shall
+issue any press release concerning Consultant's work without the other party's
+consent. Consultant may identify Client as a client of Consultant (using
+Client's name and logo) and generally describe the nature of the Services in
+Consultant's promotional materials, presentations, and proposals to current and
+prospective clients.
+
+         18.      INFORMAL DISPUTE RESOLUTION. This Agreement carefully lists
+each party's obligations in an effort to minimize disputes and aid in mutually
+satisfactory resolution of such disputes. The parties agree to attempt in good
+faith to settle any dispute, controversy or claim, whether based on contract,
+tort, statute or other legal or equitable theory arising out of or related to
+this Agreement (including any amendments or extensions thereto) (collectively, a
+"Claim") by way of consultations among the parties, which consultations shall be
+initiated upon written notice by either party to the other. For purposes of the
+foregoing sentence, Consultant shall be represented in such consultations by the
+Project Manager identified in an applicable Statement of Work, and Client shall
+be represented by an individual of commensurate authority. If the parties cannot
+come to a mutually agreeable resolution of the Claim within ten (10) business
+days, then such Claim will be referred to members of the parties' executive
+management (each such member a "Representative") for resolution, which referral
+shall be evidenced by a written notice from either party to the other (the
+"Referral"). For purposes of the foregoing sentence, Consultant's Representative
+shall be Joe Natale and Client's Representative shall be Eric Freeman. The
+parties' Representatives shall meet within five (5) business days of a Referral
+to attempt to resolve the Claim. If the Representatives have not met within five
+(5) business days of such Referral, or have not reached a mutually agreeable
+resolution of the Claim within ten (10) business days after their initial
+meeting on the subject of such Claim, then such Claim will, by way of written
+notice of
+
+
+                                                                              11
+<PAGE>
+
+either party to the other, be submitted to Mediation in accordance with the
+provisions of Section 19 hereof. Neither party shall be bound by the provisions
+of this Section 18 if the Claim pertains to or arises under Sections 4(a), 4.b),
+7, or 9 hereof.
+
+         19.      MEDIATION. If either party has a Claim against the other party
+that has not been resolved pursuant to Section 18 hereof, a written description
+of such Claim shall be provided to such other party and a good faith effort to
+resolve the problem via non-binding mediation in accordance with the applicable
+rules of the American Arbitration Association shall be made by both parties
+prior to proceeding to Arbitration or litigation. Each party shall bear its own
+costs incurred in such mediation, and the parties shall equally defray the
+mediator's fees. Any negotiations pursuant to this Section 19 are confidential,
+shall take place for no more than three (3) consecutive days, and will be
+treated as compromise and settlement negotiations for purposes of the applicable
+rules of evidence. Neither party shall be bound by the provisions of this
+Section 19 if the parties' dispute pertains to or arises under Sections 4(a),
+4.b), 7, or 9 hereof.
+
+         20.      ARBITRATION. Any Claim arising out of or relating to this
+Agreement, or the breach thereof, shall be referred to and finally resolved by
+arbitration in accordance with with either (a) the provisions of Ontario
+Arbitration Act, 1991, and regulations thereunder, as amended from time to time
+or (b) when the Agreement has been issued and executed by Montreal office of
+KPMG Consulting, the provisions of the Book Seven of the Code of Civil Procedure
+of the Province of Quebec and regulations thereunder, as amended from time to
+time. In any event, the arbitral tribunal shall be composed of three
+arbitrators, appointed as follows: each party shall appoint an arbitrator, and
+the two arbitrators so appointed shall appoint a third arbitrator who shall act
+as president of the tribunal. The place of arbitration shall be Toronto,
+Province of Ontario, Canada except when the Agreement has been issued and
+executed by Montreal office of KPMG Consulting, in which case the place of
+arbitration shall be Montreal, Province of Quebec, Canada. The language of the
+arbitration shall be English if arbitration is conducted in Toronto and in
+French if the arbitration is conducted in Montreal. The arbitration award shall
+be final and binding on the parties hereto. In no event shall any arbitration
+award provide a remedy beyond those permitted under these Terms and Conditions,
+and any award providing a remedy beyond those permitted under these Terms and
+Conditions shall not be confirmed, no presumption of validity shall attach, and
+such award shall be vacated. Either party may, without waiving any remedy under
+this Agreement, seek from any court of competent jurisdiction within the
+Province of Ontario, Canada, any interim or provisional relief that such party
+deems necessary to protect its Confidential Information and property rights,
+including without limitation rights accruing to or secured by such party under
+Section 4 hereof, pending the establishment of the arbitral tribunal (or pending
+the arbitral tribunal's determination of the merits of the Claim).
+
+         21       FORCE MAJEURE. Neither party shall be required to perform any
+term, covenant, or condition of this Agreement so long as such performance is
+delayed or prevented by force majeure, which shall mean any acts of God, wars,
+governmental laws, orders, requirements or actions, enemy or hostile
+governmental actions, strikes, lockouts, labor or employment difficulties, civil
+commotions, fires, floods, accidents or breakdowns, or any other casualties or
+conditions which are beyond the reasonable control of either party and not due
+to the fault or negligence of such party. If, as a result of any of these
+conditions, either party fails to perform any obligations specified in this
+Agreement and gives written notice of same to the other party
+
+
+                                                                              12
+<PAGE>
+
+within ten (10) days of their occurrence, then such failure shall not be deemed
+a breach or default; and the applicable time periods in which to perform shall
+be extended, but only to the extent and for the period such condition exists.
+
+         22.      NO WAIVER OF BREACH. No failure on the part of either party
+hereto to exercise, and no delay in exercising, any right, remedy, or power
+under this Agreement shall operate as a waiver thereof. Nor shall any single or
+partial exercise of any such right, remedy or power preclude any other or
+further exercise of any other right, remedy, or power. No waiver shall be valid
+unless it is in writing and signed by the party to be bound thereby.
+
+         23.      SURVIVAL. Sections 3, 4, 5, 6(c), 7, 8, 9, 13, 15 and 20 shall
+survive any expiration or termination of this Agreement.
+
+IN WITNESS WHEREOF, the parties hereto have caused this Agreement to be executed
+by their duly authorized representatives as of the Effective Date in two (2)
+counterparts, each of which shall be deemed an original and all of which
+together shall be deemed to be one and the same instrument. The parties agree
+that this Agreement or any counterpart thereof may be executed and delivered by
+fax.
+
+BLADE INTERNET VENTURES INC                   KPMG CONSULTING LP
+
+
+
+By:                                           By:
+   ---------------------------------             -------------------------------
+
+Name:                                         Name:
+     -------------------------------               -----------------------------
+
+Title:                                        Title:
+      ------------------------------                ----------------------------
+
+Date:                                         Date:
+     -------------------------------               -----------------------------
+
+
+                                                                              13
+
+</TEXT>
+</DOCUMENT>

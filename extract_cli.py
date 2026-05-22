@@ -43,11 +43,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.12"
+__version__ = "0.1.13"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.12"
+EXTRACTOR_VERSION = "0.1.13"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
@@ -616,8 +616,11 @@ _ROLE_PAREN_RE = re.compile(
 # enforces a capitalized proper noun (a global re.IGNORECASE would defeat that
 # and over-capture trailing lowercase clauses like ", without regard to ...").
 _GOV_LAW_RE = re.compile(
-    r"(?i:governed\s+by(?:\s+and\s+construed\s+in\s+accordance\s+with)?\s+"
-    r"(?:the\s+)?laws?\s+of\s+(?:the\s+)?)"
+    # Allow a short same-sentence gap between "governed by" and "laws of" so the
+    # many real connector phrasings are covered: "...and construed in accordance
+    # with...", "...and enforced in accordance with...", "the internal laws of",
+    # etc. (bounded + lazy so it stays within the clause).
+    r"(?i:(?:governed|construed|interpreted|enforced)\b[^.\n]{0,60}?\blaws?\s+of\s+(?:the\s+)?)"
     r"([A-Z][A-Za-z\.\- ]+?(?:,\s*[A-Z][A-Za-z\.\- ]+?)?)"
     r"(?=[\.,;\n)]|\s+and\b|\s+without\b|$)",
 )
@@ -889,16 +892,31 @@ def extract_signatories(text: str) -> List[JSON]:
     return out
 
 
-# Free-text jurisdiction -> a normalized ISO-ish code (best-effort, common only).
+# Free-text jurisdiction -> a normalized ISO 3166-2 / ISO 3166-1 code. All 50 US
+# states + DC, common Canadian provinces, UK nations, and frequent countries.
+_US_STATES: Dict[str, str] = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR",
+    "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE",
+    "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID",
+    "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS",
+    "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD",
+    "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS",
+    "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV",
+    "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY",
+    "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK",
+    "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT",
+    "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV",
+    "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC",
+}
 _JURISDICTION_CODES: Dict[str, str] = {
-    "delaware": "US-DE", "new york": "US-NY", "california": "US-CA",
-    "texas": "US-TX", "illinois": "US-IL", "massachusetts": "US-MA",
-    "washington": "US-WA", "florida": "US-FL", "nevada": "US-NV",
-    "new jersey": "US-NJ", "pennsylvania": "US-PA", "michigan": "US-MI",
+    **{name: f"US-{code}" for name, code in _US_STATES.items()},
     "ontario": "CA-ON", "quebec": "CA-QC", "british columbia": "CA-BC",
-    "england and wales": "GB-EAW", "england": "GB-ENG", "scotland": "GB-SCT",
+    "alberta": "CA-AB", "england and wales": "GB-EAW", "england": "GB-ENG",
+    "scotland": "GB-SCT", "wales": "GB-WLS", "northern ireland": "GB-NIR",
     "united kingdom": "GB", "france": "FR", "germany": "DE", "ireland": "IE",
     "singapore": "SG", "australia": "AU", "india": "IN", "netherlands": "NL",
+    "switzerland": "CH", "japan": "JP",
 }
 
 

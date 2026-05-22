@@ -140,7 +140,7 @@
   "amounts": [],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.12",
+    "extractor_version": "0.1.13",
     "tiers_used": [
       "deterministic"
     ],

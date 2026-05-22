@@ -1,0 +1,51 @@
+{
+  "_about": "Hand-labeled ground truth for the accuracy benchmark. Verified against the source documents (not echoed from the extractor). 'parties' and 'clauses_present' are scored as sets (precision/recall on parties, recall on the verified clause subset); the scalar fields are exact/normalized accuracy. See ATTRIBUTION.md for sources/licensing.",
+  "emp_celsci.txt": {
+    "type": "employment",
+    "parties": ["Eyal Talor", "CEL-SCI Corporation"],
+    "effective_date": "2016-08-31",
+    "governing_law": "Commonwealth of Virginia",
+    "jurisdiction": "US-VA",
+    "clauses_present": ["Term", "Termination", "Payment", "Confidentiality", "Notices"]
+  },
+  "msa_kpmg.txt": {
+    "type": "msa",
+    "parties": ["Blade Internet Ventures Inc.", "KPMG CONSULTING LP"],
+    "effective_date": "2001-08-31",
+    "governing_law": "Province of Ontario",
+    "jurisdiction": "CA-ON",
+    "clauses_present": ["Payment", "Intellectual Property", "Warranties", "Termination", "Indemnification"]
+  },
+  "services_visteon.txt": {
+    "type": "services",
+    "parties": ["Visteon Corporation", "Automotive Components Holdings, LLC"],
+    "effective_date": "2005-10-01",
+    "governing_law": "State of Michigan",
+    "jurisdiction": "US-MI",
+    "clauses_present": ["Term", "Assignment", "Indemnification", "Intellectual Property"]
+  },
+  "consulting_mtm.htm": {
+    "type": "consulting",
+    "parties": ["MTM Technologies, Inc.", "Francis J. Alfano"],
+    "effective_date": "2006-06-28",
+    "governing_law": "State of Connecticut",
+    "jurisdiction": "US-CT",
+    "clauses_present": ["Payment", "Termination", "Entire Agreement", "Governing Law", "Assignment"]
+  },
+  "emp_arcp.htm": {
+    "type": "employment",
+    "parties": ["American Realty Capital Properties, Inc.", "Glenn Rufrano"],
+    "effective_date": "2015-03-10",
+    "governing_law": "State of New York",
+    "jurisdiction": "US-NY",
+    "clauses_present": ["Term", "Termination", "Confidentiality", "Governing Law", "Payment"]
+  },
+  "emp_quadgraphics.htm": {
+    "type": "employment",
+    "parties": ["Quad/Graphics, Inc.", "John C. Fowler"],
+    "effective_date": "2004-01-01",
+    "governing_law": "State of Wisconsin",
+    "jurisdiction": "US-WI",
+    "clauses_present": ["Term", "Termination", "Confidentiality", "Governing Law", "Payment"]
+  }
+}

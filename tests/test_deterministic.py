@@ -113,6 +113,23 @@ def test_governing_law_linebreak_handled_by_build() -> None:
     assert r["governing_law"]["value"] == "Province of Ontario"
 
 
+def test_governing_law_alternative_phrasings() -> None:
+    # Beyond "governed by the laws of X": real connector phrasings.
+    cases = {
+        "interpreted and enforced in accordance with the laws of the State of Connecticut": "State of Connecticut",
+        "governed by, and enforced in accordance with, the laws of the Commonwealth of Virginia": "Commonwealth of Virginia",
+        "construed under the laws of the State of Texas": "State of Texas",
+    }
+    for text, expected in cases.items():
+        assert ex.extract_governing_law(text)["value"] == expected, text
+
+
+def test_jurisdiction_more_states() -> None:
+    for place, code in [("State of Virginia", "US-VA"), ("State of Connecticut", "US-CT"),
+                        ("State of Wisconsin", "US-WI"), ("State of Georgia", "US-GA")]:
+        assert ex.extract_jurisdiction(ex._field(place, 0.85))["value"] == code
+
+
 def test_governing_law_missing() -> None:
     assert ex.extract_governing_law("nothing about law")["source"] == "none"
 

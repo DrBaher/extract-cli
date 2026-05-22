@@ -1,0 +1,1054 @@
+<DOCUMENT>
+<TYPE>EX-10.3
+<SEQUENCE>4
+<FILENAME>k98871exv10w3.txt
+<DESCRIPTION>VISTEON SALARIED EMPLOYEE LEASE AGREEMENT
+<TEXT>
+<PAGE>
+                                                                    Exhibit 10.3
+
+                    VISTEON SALARIED EMPLOYEE LEASE AGREEMENT
+
+     AGREEMENT (this "AGREEMENT") dated as of October 1, 2005 between Visteon
+Corporation, a Delaware corporation ("VISTEON"), and Automotive Components
+Holdings, LLC f/k/a VFH Holdings, LLC, a Delaware limited liability company,
+("ACH"). Visteon and ACH are referred to herein individually as a "PARTY" and
+collectively as the "PARTIES".
+
+                                   WITNESSETH:
+
+     WHEREAS, Visteon and Ford Motor Company ("FORD") have agreed to restructure
+their business and commercial relationships, resulting, among other matters, in
+a Ford-controlled entity acquiring, through the purchase of Automotive
+Components Holdings, Inc. f/k/a/ VFH Holdings, Inc., certain assets and
+liabilities related to Visteon's North America business, (the "BUSINESS")
+pursuant to a Visteon "B" Purchase Agreement dated as of September 12, 2005;
+
+     WHEREAS, ACH is a wholly owned subsidiary of Automotive Components
+Holdings, Inc. f/k/a/ VFH Holdings, Inc and the Business shall be contributed by
+Visteon to ACH in connection with the transactions; and
+
+     WHEREAS, ACH desires to obtain the services of certain Visteon salaried
+employees ("VISTEON SALARIED EMPLOYEES") to enable it to continue to conduct the
+Business and Visteon is willing to provide the services of certain Visteon
+Salaried Employees to ACH.
+
+     NOW THEREFORE, in consideration of the above premises and the mutual
+covenants herein contained, and for other good and valuable consideration given
+by each Party hereto to the other, the sufficiency and receipt of which are
+hereby acknowledged, the Parties hereto, intending to be legally bound, hereby
+agree as follows:
+
+                                    ARTICLE 1
+                                      TERM
+
+     Section 1.01. Term. The term of this Agreement shall commence on October 1,
+2005, such date being referred to hereafter as the "Effective Date" and shall
+terminate on the earlier of (i) the termination of employment of all of the
+Leased Employees (as defined below); (ii) the agreement of the Parties to
+terminate this Agreement or (iii) December 31, 2009 ("TERM"). The Term may be
+extended at ACH's option for an additional twelve month period ending December
+31, 2010 ("EXTENDED TERM").
+
+                                    ARTICLE 2
+                    ASSIGNMENT OF VISTEON SALARIED EMPLOYEES
+
+     Section 2.01. Employee Census. (a) A preliminary employee census is
+attached as Schedule 2.01 ("PRELIMINARY CENSUS"). The Preliminary Census sets
+forth a list of the Visteon Salaried Employees to be leased to ACH as of the
+Effective Date, together with their base
+<PAGE>
+salary, any other targeted or mandatory cash compensation, and including without
+limitation, applicable bonus levels, job classification, and Global
+Identification Number. Within ten days of the date hereof, Visteon shall update
+the Preliminary Census with any applicable changes and deliver the Preliminary
+Census to ACH. ACH shall have an additional ten days to approve the revised
+Preliminary Census. After the revised Preliminary Census is approved by ACH, it
+shall be substituted for Schedule 2.01 and shall be known as the "EMPLOYEE
+CENSUS". Employees who are identified on the Employee Census shall be known as
+"LEASED EMPLOYEES". Visteon shall update the Employee Census at least monthly
+for any employee transaction (i.e., quits, death, transfers, etc.) in accordance
+with this Agreement and any employees added shall also be known as Leased
+Employees.
+
+     (b) The period during which Leased Employees are leased to ACH is referred
+to as the "LEASE PERIOD". During the Lease Period, Visteon shall make available
+to ACH the services of the Leased Employees as requested by ACH. For avoidance
+of doubt, no Inactive Visteon Salaried Employee (as hereafter defined) shall be
+leased to ACH as of the Effective Date. An Inactive Visteon Salaried Employee
+shall be any Visteon Salaried Employee who is absent from work and who is
+entitled to reinstatement on return to employment, including those on leave of
+absence, workers' compensation leave or short or long term disability leave, but
+excluding those who are on paid absence for jury duty, bereavement, short term
+military service, vacation or holiday. If a Leased Employee becomes an Inactive
+Visteon Salaried Employee and is removed from Visteon's active payroll at
+anytime during the Lease Period, such Leased Employee shall be removed from the
+Employee Census and ACH shall bear no further financial responsibility with
+respect to such employee.
+
+     Section 2.02. Replacement of Attrition. (a) If ACH requires a replacement
+for a Leased Employee who is no longer providing services to ACH, and ACH
+determines that Visteon should provide the replacement employee, ACH will inform
+Visteon of its requirements together with direction that the vacancy should be
+filled by a Visteon new hire, an existing Visteon employee or an agency
+employee, in its sole discretion, subject to Section 2.02(d) below. If ACH
+directs that the position be filled by a Visteon new hire, Visteon shall use
+commercially reasonable efforts to fill the position using Visteon's standard
+employment practice, policies and procedures. If Visteon has an existing Visteon
+employee who Visteon believes is qualified for the position, ACH shall consider
+such qualified employee. Visteon may utilize its normal job posting procedures
+for M7 and below positions or its personnel development process for M6 or above
+positions to identify internal candidates for the position, either among the
+Leased Employees or among other Visteon employees. Either Visteon or ACH may
+suspend or narrow the scope of the internal candidate identification process,
+upon ten days prior written notice to the other Party. In any event, for a
+period of up to six months from the date hereof, a Visteon employee who is not a
+Leased Employee shall not be considered for an open position at ACH; provided,
+however, that the Parties may mutually agree to waive, modify or restore (if
+previously waived) the six month restriction. Candidates for the position shall
+be reviewed with the manager who initiated the employment request to determine
+if the candidate is qualified for the position and the employment decision shall
+be made in accordance with Visteon's applicable employment policies. If Visteon
+hires the candidate and assigns such candidate to ACH, or if an existing Visteon
+employee is approved
+
+
+                                       2
+<PAGE>
+by ACH for lease, Visteon shall modify the Employee Census to add any such
+employee to the Employee Census in which case the employee shall become a Leased
+Employee.
+
+     (b) If ACH determines that Visteon shall provide an agency employee to fill
+a position, Visteon shall supply such agency employee to ACH at cost without
+markup until the expiration of the Term. Visteon shall not supply any agency
+employees to ACH for the Extended Term, provided however, that Visteon will
+assign any contract for agency personnel to ACH, at ACH's request and shall use
+commercially reasonable efforts to obtain the consent of the employment agency.
+
+     (c) ACH may contract directly with employment agencies or technical service
+firms to supply required personnel, in its sole discretion. If ACH contracts
+directly with such agencies or firms, it will furnish Visteon a census similar
+in content and frequency to the Employee Census furnished to ACH by Visteon
+pursuant to Section 1.01, and ACH shall reimburse Visteon for any applicable
+occupancy charge with respect to such contracted employees on the same basis as
+is provided in Section 4.01(iv) hereof. This provision shall not be subject to
+the Agency Threshold described below.
+
+     (d) ACH shall instruct Visteon to replace a Leased Employee with a Leased
+Employee and an agency employee with an agency employee; provided, however, that
+ACH may, in its sole discretion, instruct Visteon to replace an agency employee
+with a Leased Employee if the percentage of agency employees assigned to the
+Business is not less than 5.7% of the number of Leased Employees assigned to the
+Business as of the month end immediately prior to the date of such replacement
+instruction (the "AGENCY THRESHOLD"). If the percentage of agency employees is
+below the Agency Threshold, the Parties shall mutually agree on whether a
+replacement shall be a Leased Employee or an agency employee.
+
+     Section 2.03. Return to Visteon by Mutual Agreement. In the event that
+there is a promotional or other career development opportunity at Visteon
+available for a Leased Employee, and upon mutual agreement between the Parties,
+a Leased Employee may be removed from this Agreement and returned to Visteon on
+a mutually agreeable date. Visteon shall modify the Employee Census accordingly
+and any reimbursements from ACH with respect to such employee shall cease as of
+the date the employee is returned to Visteon. Such attrition shall be replaced
+as provided in Section 2.02 above. Notwithstanding the above, for a period of up
+to six months after the date hereof, no Leased Employee shall be returned to
+Visteon under the provisions of this Section 2.03 unless mutually agreed by the
+Parties.
+
+     Section 2.04. Removal of Leased Employee from Lease Without Cause. If ACH
+desires to discontinue the lease of any individual Leased Employee or group of
+Leased Employees under circumstances that would make the Leased Employee
+eligible for benefits under the Visteon Separation Program ("VSP") and not for
+reasons related to "performance issues" or "cause" as described in Section 3.02,
+ACH shall use commercially reasonable efforts to give Visteon at least ten
+business days notice prior to the end of the calendar month. Upon receipt of
+notice, Visteon shall attempt to place the Leased Employee in a comparable
+position at Visteon. The Leased Employee will remain under lease until the
+earlier of (i) the date such
+
+
+                                       3
+<PAGE>
+employee is placed at Visteon or (ii) thirty (30) days following the date of the
+notice of termination to the employee, provided the termination shall occur no
+later than the end of the month following the month during which the notice of
+lease discontinuance occurs. ACH shall remain responsible for the lease fees for
+such time period. At ACH discretion, it may retain the services of the Leased
+Employee at ACH for such time period or may dismiss such Leased Employee. In any
+event, the Leased Employee shall not return to Visteon unless to report to work
+at a comparable Visteon position. In the event of a sale of a facility or other
+extraordinary event, the Parties may mutually agree to terminate the lease of a
+group of Leased Employees prior to the end of a month.
+
+     Section 2.05. Buyer Employment. (a) Visteon will be responsible for
+transitioning Leased Employees to any buyer of all or any part of the Business
+under terms mutually agreed by Visteon, the buyer and ACH. Visteon shall
+cooperate with ACH and buyer to support and facilitate such transfers and
+promptly shall provide any information reasonably required by Ford or a buyer in
+the conduct of buyer's due diligence in connection with such transaction
+pursuant to the terms of the Master Services Agreement dated as of even date
+herewith between the Parties and subject to any confidentiality provisions.
+Visteon shall not impose any confidentiality obligations on a Leased Employee
+who is transferred to a buyer that are greater than the obligations the Leased
+Employee had as a Visteon Salaried Employee and any such confidentiality
+obligations shall be no greater than those imposed on a Leased Employee to ACH.
+Any Leased Employee who transfers to a buyer shall be removed from the Employee
+Census effective on the date of transfer to buyer and all future lease fees with
+respect thereto shall cease. At buyer's request, Visteon shall lease the Leased
+Employees affected by the sale to the buyer for a period not to exceed six
+months from the sale date, at the same cost as such employees had been leased to
+ACH.
+
+     (b) In the event of a sale or transfer of all or any part of the Business
+to a buyer, and a transfer of Leased Employees to such buyer in accordance with
+(a) above, Visteon shall make any appropriate arrangements concerning HR
+services as is determined by ACH, Visteon and a buyer for up to twenty-four (24)
+months as provided under the terms of the Master Services Agreement. Visteon
+shall provide such HR services to a buyer at the following rates:
+
+<TABLE>
+<CAPTION>
+TERM                             PRICE
+----                             -----
+<S>                              <C>
+9 months post-sale               Cost + 5%
+10-15 months post-sale           Cost + 8%
+16 months and beyond post-sale   Cost + 12%
+</TABLE>
+
+     Section 2.06. Terminations. (a) If a Leased Employee's services are no
+longer required pursuant to Section 2.04 above, and Visteon terminates such
+employee because no comparable job is available at Visteon, Visteon shall
+terminate the Leased Employee under the terms of the
+
+
+                                       4
+<PAGE>
+VSP as applicable to Leased Employees and as in effect as of the date hereof. A
+Leased Employee who declines a comparable job at Visteon or a buyer shall not be
+eligible for benefits under the VSP. Visteon and ACH shall mutually agree on the
+definition of "comparable job". During the Lease Period, Visteon shall make no
+change in the terms of the VSP that reduces the schedule of separation benefits,
+duration of welfare benefit continuation or continuation of outplacement
+assistance as applicable to Leased Employees as of the date hereof. Any waiver
+and release obtained from a Leased Employee in connection with the VSP shall
+include as released parties ACH, Ford and their affiliates, as well as present
+and former officers, directors, employees and agents of each of them. Visteon
+shall not terminate a Leased Employee under the terms of the VSP if such Leased
+Employee is being terminated "for cause" or for failure to achieve acceptable
+performance under the Visteon Performance Improvement Program ("PIP"), as
+described in Section 3.02 (b). Visteon shall be reimbursed for costs under the
+VSP only to the extent provided in the Reimbursement Agreement dated as of even
+date herewith among Ford and Visteon and the Escrow Agreement dated as of even
+date herewith between Ford, Visteon and Deutsche Bank Trust Company Americas. No
+reimbursement for VSP costs shall be allowable under Article 4 hereof.
+
+     (b) Visteon shall be responsible for complying with any applicable Worker
+Adjustment and Retraining Notification ("WARN") Act and any other legal
+requirements in connection with a termination of a Leased Employee, provided
+that Visteon receives notice from ACH sufficiently in advance to permit such
+compliance, including notification requirements. If Visteon does not receive
+sufficient notice from ACH, ACH shall be responsible for all costs of compliance
+with WARN or any similar law, including cost of any period of continued
+employment or pay in lieu of notice.
+
+     Section 2.07. Baseline. The sum of the number of Visteon Salaried Employees
+who (i) are initially leased to ACH as of October 1, 2005 under this Agreement;
+(ii) have been identified as TBD positions under the Employee Roster delivered
+to ACH pursuant to Section 5.06 of the Contribution Agreement; and (iii) are
+leased under the lease agreement dated as of even date herewith between Visteon
+and Ford concerning the Rawsonville and Sterling Visteon Salaried Employees
+("FORD LEASE AGREEMENT") (the lease transaction being subject to adoption of
+competitive operating agreements at the plants), shall establish a baseline
+("BASELINE"). In the event of attrition, Visteon shall replace employees on a
+one for one basis up to the Baseline, in accordance with the terms of Section
+2.02. The Baseline shall be adjusted as follows:
+
+     A.   In the event of a corporate transaction involving (i) the sale of all
+          or any part of the Business; (ii) a transfer of any part of the
+          Business to Ford (i.e., Rawsonville/Sterling); or (iii) closure of all
+          or any part of the Business, where Leased Employees are either
+          transferred to Ford, a buyer or are terminated by Visteon, the
+          Baseline shall be reduced by the number of the Leased Employees who
+          are transferred or terminated in connection with such transaction.
+
+
+                                       5
+<PAGE>
+     B.   In the event a Leased Employee receives a VSP benefit and is not
+          otherwise part of a corporate transaction described in (A) above, the
+          baseline will be reduced by one.
+
+The Baseline so reduced shall be known as the "ADJUSTED BASELINE". Visteon shall
+not be obligated to fill ACH requisitions for replacement employees under this
+Agreement through new Leased Employees in excess of the lesser of the Baseline
+or Adjusted Baseline, as applicable.
+
+
+                                       6
+<PAGE>
+                                    ARTICLE 3
+                                EMPLOYER MATTERS
+
+     Section 3.01. Employer Definition. Visteon shall be the employer of the
+Leased Employees and ACH shall not be considered the employer. Visteon will
+instruct Leased Employees while at ACH facilities (i) to conform to ACH policies
+and applicable law regarding safety and health, and personal and professional
+conduct (including wearing an identification badge or personal protective
+equipment and adhering to plant regulations and general safety practices or
+procedures) generally applicable to such facilities, which policies, procedures,
+rules and regulations ACH will provide as soon as practicable after the date
+hereof, and as soon as practicable upon any modification, termination or
+adoption of any such policy, procedure, rule or regulation; and (ii) to
+otherwise conduct themselves in a lawful and businesslike manner. Leased
+Employees also shall be subject at all times to Visteon's policies and
+procedures. During the Lease Period, Visteon shall retain responsibility for all
+payments and benefits due to the Leased Employees in connection with their work
+relating to the Business, including but not limited to:
+
+(i)  the payment of Leased Employees' base salary or other components of pay
+     (less any applicable withholding or other taxes or any amounts deducted
+     from such wages pursuant to normal payroll practices of Visteon);
+
+(ii) the provision of employee benefits applicable to Leased Employees;
+
+(iii) payment of all federal, state, or local taxes withheld or otherwise
+     required to be paid with respect thereto, and
+
+(iv) the liability for statutory benefits, including workers' compensation.
+
+     Section 3.02. Employer Rights. (a) Visteon shall retain all employer
+rights, except as specifically provided below, including the right to terminate
+Leased Employees, after notice to ACH. Visteon shall have the right to change
+the salary and job classification of the Leased Employees upon reasonable notice
+to ACH. Although Visteon shall remain responsible for performance management and
+personnel development, ACH and its management shall have the right to assign to,
+and structure work for, Leased Employees. Leased Employees shall administer
+Visteon's human resources management policies and practices, such as performance
+reviews, compensation planning, discipline, and personnel development policies,
+and other Visteon policies, procedures, rules and regulations applicable to the
+Leased Employees, and ACH shall permit the Leased Employees to conduct such
+activities. Visteon may request ACH to provide information or documents with
+respect to the Leased Employees' job performance and other matters, and ACH
+shall cooperate with Visteon in providing such information or documents.
+
+
+                                       7
+<PAGE>
+     (b) In the event that ACH has a concern regarding a Leased Employee during
+the Lease Period, including but not limited to a concern regarding a Leased
+Employee's performance or conduct, ACH shall provide written notice of its
+concern to Visteon and such notice shall identify specifically the nature of
+ACH's concern. Upon receipt of such notice, Visteon shall implement a PIP in
+accordance with its policies. If the identified concern is not cured to the
+satisfaction of ACH by the end of the PIP, ACH shall have the right to notify
+Visteon in writing that the Leased Employee is to be returned to Visteon and
+removed from the Employee Census effective at the end of the month immediately
+following the end of the PIP. If a Leased Employee commits an offense which
+would justify a "for cause" termination under Visteon's personnel policies, as
+determined by Visteon, such employee shall be immediately escorted from the
+worksite and removed from the Employee Census. ACH's obligation to reimburse
+Visteon for any such employee removed from the Employee Census shall terminate
+on the last day worked for ACH.
+
+     Section 3.03. Management of Hourly Employees. Pursuant to a Ford Hourly
+Employee Assignment Agreement dated as of even date herewith between Ford Motor
+Company and ACH, ACH intends to lease certain Ford hourly employees represented
+by the International Union, United Automobile, Aerospace and Agricultural
+Implement Workers of America, UAW and its affiliated locals (collectively,
+"UAW") who are covered under the terms and conditions of the Ford-UAW Collective
+Bargaining Agreement dated as of September 15, 2003 between Ford and the UAW and
+various local agreement by and between Ford and the UAW, and any successor
+agreements ("FORD-UAW CBA") ("FORD HOURLY EMPLOYEES"). Pursuant to a Visteon
+Hourly Employee Lease Agreement dated as of even date herewith between Visteon
+and ACH, ACH intends to lease certain Visteon hourly employees represented by
+the UAW who are covered under the terms and conditions of the (i) Master
+Visteon-UAW Collective Bargaining Agreement dated June 29, 2000 and the
+Supplemental Agreement dated as of May 4, 2004 and extensions or successor
+agreements by and between Visteon and the UAW (collectively, "MASTER VISTEON
+CBA") ("VISTEON HOURLY SUPPLEMENTAL AGREEMENT EMPLOYEES") or (ii) the UAW Local
+#1216-Visteon Corporation Regional Assembly and Manufacturing LLC, Bellevue
+Plant, Labor Agreement ("BELLEVUE CBA") ("BELLEVUE HOURLY EMPLOYEES").
+
+     The Leased Employees who are engaged in hourly supervision have authority
+to exercise day to day supervision over the Ford Hourly Employees, the Visteon
+Hourly Supplemental Agreement Employees and the Bellevue Hourly Employees
+(collectively, "HOURLY EMPLOYEES") in accordance with the terms of the Ford-UAW
+CBA, Master Visteon CBA, and Bellevue CBA, respectively. In the event that any
+employment concern arises in connection with administration of the applicable
+CBA, the Leased Employee shall consult with ACH, and Visteon or Ford, as
+applicable, and shall resolve the concern consistent with Visteon's or Ford's
+application of the applicable CBA to their general hourly populations, if any.
+
+     Section 3.04. Employer Representations. Visteon represents and warrants
+that as of the date a Visteon Salaried Employee becomes a Leased Employee, (i)
+the Leased Employee shall be paid by Visteon on a salaried basis; (ii) shall not
+be subject to any collective bargaining
+
+
+                                       8
+<PAGE>
+agreement or have elected to be represented by a collective bargaining
+representative unless otherwise disclosed in Section 3.07(a)(v) of the
+Contribution Agreement dated as of September 12, 2005 between Visteon and ACH
+Holdings, Inc. and (iii) shall be subject to Visteon's annual compensation
+planning process as set forth in Visteon's policies and procedures.
+
+     Section 3.05. ACH Confidentiality Agreement. A Leased Employee shall be
+required to execute the ACH Leased Employee Confidentiality Agreement attached
+hereto as Schedule 3.05 ("CONFIDENTIALITY AGREEMENT"). ACH shall not require a
+Leased Employee to divulge Visteon's confidential information to ACH except to
+the extent that any confidential information was otherwise acquired by ACH in
+connection with the transactions. Visteon will use commercially reasonable
+efforts to require Leased Employees to comply with the terms of the
+Confidentiality Agreement. Visteon shall not use confidential information of
+either ACH or Ford that is provided by a Leased Employee in breach of the
+Confidentiality Agreement.
+
+     Section 3.06. Payroll and Related Services. During the Lease Period,
+Visteon shall provide payroll processing services for its Leased Employees
+comparable to such services for its salaried employees other than Leased
+Employees. Upon reasonable request or as needed, Visteon will provide assurances
+that all proper payments and reporting requirements have been made.
+
+     Section 3.07. Employee Benefit Plans. (a) During the Lease Period, Visteon
+shall provide benefits to the Leased Employees under any Visteon employee
+benefit plan, as such term is defined in Section 3(3) of the Employment
+Retirement Income Security Act of 1974 ("ERISA") ("EMPLOYEE PLANS") and which
+are intended to be qualified under Section 401(a) of the Internal Revenue Code
+of 1986, as amended, ("QUALIFIED PLANS") that are the same as provided to other
+Visteon salaried employees.
+
+     (b) During the Lease Period, Visteon shall maintain the level of benefits
+under Employee Plans and any other fringe benefit plans and arrangements of
+Visteon for Leased Employees that are in effect as of the date hereof, unless
+otherwise agreed by ACH. Visteon shall give ACH at least ninety days (90), where
+practicable, but in no event less than thirty (30) days (one hundred eighty
+(180) days in the case of benefits offered through the Flexible Benefits Plan of
+Visteon Corporation) prior written notice of any proposed change in Visteon's
+Employee Plans or other employee arrangements applicable to Leased Employees and
+Visteon shall consult with ACH about such changes. Any change must be consistent
+with any applicable collective bargaining agreement. ACH shall inform Visteon
+whether or not it will consent to such changes within thirty (30) days of
+receipt of notice of the proposed change from Visteon. In the event ACH consents
+to any such change, then the change shall be applicable to the Leased Employees
+as well as to other salaried employees of Visteon. Either prior to or after the
+proposed change in Employee Plans or arrangements takes effect, ACH may request
+that Visteon adopt and administer a special retention benefit in the sole
+discretion of ACH which benefit may take the form of cash-based retention
+incentives and/or non-cash benefits. Visteon shall advise ACH of any incremental
+benefit administration costs that would be charged to ACH in connection with a
+non-cash benefit. In the event ACH requests the form be non-cash benefits,
+Visteon shall have the right to reject such request if it would be
+
+
+                                       9
+<PAGE>
+administratively burdensome or not permitted by law. The cost of such special
+retention benefits shall be included in the direct wage and benefit costs
+reimbursed by ACH under Section 4.01 below, and any incremental benefit
+administration costs associated with a non-cash benefit shall be borne by ACH.
+For avoidance of doubt, Visteon shall retain the right to modify, suspend or
+terminate any Employee Plans and any other fringe benefit plans and arrangements
+of Visteon applicable to other Visteon salaried employees who are not Leased
+Employees.
+
+     (c) Except as provided below, for performance periods commencing 2006 and
+beyond, during the Lease Period Visteon shall make no change in the incentive
+compensation plans applicable to Leased Employees that reduces the target
+incentive opportunities of such plans as of the date hereof. Prior to the date
+hereof, Visteon and Ford implemented a process by which Visteon would review
+with, and seek to obtain approval of, (i) amended incentive compensation plan
+terms for transfers of Leased Employees to buyers and (ii) the right of ACH to
+request adjustments to any performance metrics within such plan to be relevant
+to ACH's Business rather than Visteon's remaining business, by the Visteon
+Organization and Compensation Committee ("COMPENSATION COMMITTEE"). If the
+Compensation Committee subsequently fails to approve the proposal described
+above, any arrangements under this Agreement concerning reimbursement for
+Visteon long term incentive programs shall be suspended pending a final
+resolution. Visteon shall implement any mutually agreed changes as soon as
+practicable after the date hereof at a mutually agreed date, subject to
+Compensation Committee approval, if applicable.
+
+     (d) Leased Employees shall be ineligible to participate in any employee
+benefit plan, fringe benefit program or other benefit arrangement sponsored by
+ACH or Ford, except (i) as otherwise may be provided in the Amended and Restated
+Employee Transition Agreement between Ford and Visteon dated as of April 1, 2000
+and restated as of December 19, 2003, and as amended by Amendment Number One to
+Amended and Restated Employee Transition Agreement dated effective as of
+December 19, 2003, and as further amended by Amendment Number Two to Amended
+and Restated Employee Transition Agreement dated as of even date herewith.
+("EMPLOYEE TRANSITION AGREEMENT") or (ii) as ACH, Ford and Visteon may mutually
+agree in writing.
+
+     (e) Requests for leave, reasonable accommodation and other benefits
+provided by Visteon policies or by federal, state or local law will be
+coordinated by ACH and Visteon.
+
+     (f) During the Lease Period, Visteon shall maintain, administer and manage
+all employee benefit and fringe benefit plans and arrangements offered to the
+Leased Employees, except as provided in the paragraph immediately above.
+
+
+                                       10
+<PAGE>
+                                    ARTICLE 4
+                                  REIMBURSEMENT
+
+     Section 4.01. Direct Wage and Benefit Costs. Visteon shall be reimbursed
+for the direct wage and benefit costs for the Leased Employees. For purposes of
+this Section 4.01, reimbursements for "direct wage and benefit costs" shall
+include:
+
+(i)  The base monthly salary, and any other type of cash compensation paid by
+     Visteon to the Leased Employees for work performed during the Lease Period,
+     such as overtime, moving allowance, vehicle allowances, and any other cash
+     compensation not included in the Standard Monthly Group Fringe Cost (as
+     defined below), subject to ACH prior written approval of the annual
+     compensation allocations including the annual market increases, special
+     market increases and movement in range;
+
+(ii) A per-employee Standard Monthly Group Fringe Cost according to the rate
+     schedules set forth on Schedule 4.01(ii) attached hereto. The rate schedule
+     shall be reviewed monthly by ACH. Visteon may change the rate schedule
+     periodically to reflect changes in costs and plan benefits but no more than
+     four times per any calendar year commencing in 2006, subject to ACH prior
+     written approval, which approval shall not be unreasonably withheld. The
+     Standard Monthly Group Fringe Cost shall not include any fees that are to
+     be reimbursed to Visteon under the Master Services Agreement for such
+     expenses;
+
+(iii) Prorata expense for annual and long-term incentives associated with the
+     Leased Employees, assessed on a monthly basis, based on the allocation of
+     responsibility set forth in Schedule 4.01(iii);
+
+(iv) A per-employee Occupancy Charge at the rate of Seven Thousand Five Hundred
+     Dollars ($7,500) per year, assessed on a monthly basis commencing April 1,
+     2006, but only with respect to a Leased Employee who continues to occupy
+     Visteon's owned or leased facilities and only to the extent ACH does not
+     otherwise reimburse Visteon for such expense through any other means;
+
+(v)  Expenses incurred by Visteon with respect to each Leased Employee which is
+     not included in (i) through (iv) above that arise as a result of the Leased
+     Employee's work for ACH, such as reserves for any workers' compensation
+     claims arising out of a work accident while the Leased Employee was
+     performing work for ACH during the Lease Period;
+
+(vi) Reasonable and necessary travel and business related expenses incurred by
+     Visteon in furtherance of ACH Business and paid or reimbursed to a Leased
+     Employee by Visteon as authorized by Visteon's standard travel and business
+     expense reimbursement policy. Reimbursement under this subsection shall not
+     include any fees that are to be reimbursed to Visteon under the Master
+     Services Agreement for such expenses; and
+
+
+                                       11
+<PAGE>
+(vii) Any taxes incurred or paid by Visteon with respect to the Leased Employees
+     not otherwise covered under Sections (i) through (v) above, including
+     employer payroll taxes, the Michigan single business tax, and any excise,
+     sales, use, gross receipts, value added or other similar transaction taxes
+     that may be levied by any domestic or foreign government related to the
+     charges or services rendered pursuant to this Agreement; provided, however,
+     that Visteon shall use commercially reasonable efforts to mitigate any
+     applicable tax, including reasonable cooperation with ACH or Ford in
+     connection with such mitigation.
+
+     Section 4.02. Annual Rate Setting. Except as provided below, Visteon and
+ACH shall meet sixty (60) days prior to the end of the calendar year, or at a
+mutually agreed annual time period that is consistent with regular annual fringe
+cost changes, for the purpose of determining (i) the Standard Monthly Group
+Fringe Cost set forth in Section 4.01(ii) above; and (ii) the Occupancy Charge
+set forth in Section 4.01(iv), each applicable for the following twelve month
+period. If the Parties are unable to agree on the per-employee rate for the
+Standard Monthly Group Fringe Cost set forth in Section 4.01(ii) above, the rate
+as determined by Visteon shall be in effect and applied to the most current
+Employee Census until the new rate is agreed and any adjustment shall be
+retroactively effective as of the beginning of the twelve month period. If the
+Parties are unable to agree on the per-employee Occupancy Charge set forth in
+Section 4.01(iv) above, the immediately prior rate shall remain in effect and
+applied to the most current monthly Employee Census until the new rate is agreed
+and the new rate shall be retroactively effective as of the beginning of the
+twelve month period. If either of the rates is not agreed prior to the beginning
+of the applicable periods, the Parties shall continue to diligently resolve the
+rate differences in a timely manner.
+
+     Section 4.03. Reconciliation. Within a thirty (30) day period subsequent to
+the end of the calendar year, Visteon shall provide ACH with a statement
+indicating the Actual Group Monthly Fringe Cost for the year for the Leased
+Employees and the amount that was billed to ACH pursuant to Section 4.01(ii).
+For purposes hereof, "Actual Group Monthly Fringe Cost" for the year equals the
+actual payments made to include year end accruals, plus or minus the changes in
+reserves. ACH or its representatives shall have the right to verify the
+statement and Visteon promptly shall make available to ACH or its
+representatives all supporting documentation. After ACH approves the statement,
+Visteon shall make any appropriate adjustment (credit or debit) in the next
+billing cycle. Notwithstanding the above, any adjustments with respect to
+pension or other post employment benefits shall be made in accordance with
+Schedule 4.01(ii) Salaried Fringe Expense Definitions, "Pension and OPEB Budget
+and Adjustment".
+
+     Section 4.04. Payment Schedule/Payment. Payments due hereunder shall be
+paid according to the following schedule:
+
+(i)  Visteon shall provide ACH with an invoice for Section 4.01(i) salary and
+     other cash compensation and Section 4.01(vii) statutory fees invoice two
+     business days prior to the applicable pay date; and
+
+
+                                       12
+<PAGE>
+(ii) Section 4.01(ii) Standard Monthly Group Fringe Cost, Section 4.01(iii)
+     Incentive Compensation Fees, Section 4.01(iv) Occupancy Charge; Section
+     4.01 (v) Other Expenses and Section 4.01 (vi) Travel and Business expenses
+     shall be invoiced five business days prior to the end of the month.
+
+     Visteon shall render an invoice to ACH in such form and containing such
+detail as ACH shall reasonably require, for the amounts described above. The
+total due on the invoice shall be paid to Visteon on (i) the second business day
+after receipt of the invoice with respect to Section 4.04(i) and (ii) the last
+business day of the month with respect to Section 4.04 (ii) provided, however
+that reimbursement with respect to post retirement health and life benefits for
+Group I and II Employees (as defined in the Employee Transition Agreement) who
+are Leased Employees shall not be reimbursed to Visteon but shall be credited by
+Ford to the Salaried Employee OPEB Payment Notional Account under the Employee
+Transition Agreement as more fully described under the Employee Transition
+Agreement. Payments may be made by wire transfer or other means reasonably
+acceptable to Visteon. ACH or its representatives shall have a right to audit
+the invoices and related records of Visteon upon reasonable notice during normal
+business hours, at a place mutually agreed by the Parties.
+
+     Section 4.05. Workers' Compensation and Unemployment Insurance. Visteon
+shall continue to provide Workers' Compensation and Unemployment Compensation
+coverage for all of the Leased Employees at all times during the term of this
+Agreement.
+
+     Section 4.06. Extended Term Rate. In the event that ACH requests Visteon to
+extend the term of this Agreement until December 31, 2010, ACH shall reimburse
+Visteon on the same basis as set forth in Section 4.01 through Section 4.04;
+provided, however, that with respect to the Extended Term, in addition to the
+types of reimbursable expenses set forth in Section 4.01, Visteon shall be
+reimbursed monthly for continued personnel and benefits administration services
+with respect to the Leased Employees ("HR SERVICES") at five percent (5%) of the
+reimbursable expenses set forth in Section 4.01, excluding subsection (vii), of
+the Leased Employees who are leased at that time. Except as set forth above with
+respect to cost, Visteon shall provide the HR Services to ACH under
+substantially the same terms and conditions as such HR Services were provided
+under the Master Services Agreement.
+
+     Section 4.07. Pension Adjustment. ACH shall reimburse Visteon for the
+effect on the projected benefit obligation, as defined in SFAS No. 87, of the
+liabilities related to Group I and II Leased Employees under the Ford General
+Retirement Plan and any Leased Employee under the Visteon Pension Plan for any
+Leased Employee average merit salary increase which exceeds the average merit
+increase applicable to Visteon salaried employees by one-half percent in any
+given year, provided ACH shall receive credit toward the lease fees otherwise
+owed hereunder if the Leased Employee average merit increase is less than the
+average Visteon salaried employees merit increase by one-half percent in any
+given year using the same methodology as provided under Exhibit Y to the
+Employee Transition Agreement. Notwithstanding the above, Visteon shall not be
+reimbursed, or ACH credited, in a manner that would result in either of the
+Parties being given duplicative reimbursement or credit arising from the same
+event.
+
+
+                                       13
+<PAGE>
+                                    ARTICLE 5
+                                WORK ENVIRONMENT
+
+     Section 5.01. Compliance With All Health and Safety Laws. The Parties shall
+comply with all applicable, national, federal, state and local health and safety
+laws, regulations, ordinances, directives, and rules for Leased Employees
+working on their respective premises.
+
+     Section 5.02. Compliance with Employment Laws. Each of the Parties shall
+comply with all applicable national, federal, state and local employment laws,
+including, but not limited to, wage and hour, overtime, discrimination laws,
+and/or local ordinances with respect to its employees.
+
+                                    ARTICLE 6
+                        INTELLECTUAL PROPERTY ASSIGNMENT
+
+     Section 6.01. Assignment. Leased Employees are employees of Visteon or a
+Subsidiary thereof. As a result, all intellectual property rights in inventions,
+discoveries or improvements made, conceived, developed or first reduced to
+practice, and in original and derivative works of authorship created by each of
+them, during the period of their employment with Visteon and that relate to any
+matter, thing, process or method of manufacture connected in any way with
+Visteon's or its Subsidiary's business, are the property of Visteon under the
+terms of their employment agreements or by law. Under this Agreement, Visteon
+agrees to assign or cause to be assigned to ACH all right, title and interest in
+and to such inventions, discoveries, improvements, and original and derivative
+works of authorship created, made, conceived, developed or first reduced to
+practice by any of the Leased Employees, during the term each Leased Employee is
+leased to ACH . Such assignment shall not preempt, supersede or otherwise
+interfere with Visteon practicing rights received under license from ACH in
+accordance with other agreements between the Parties. Visteon further agrees to
+execute or cause to be executed all assignment and other transfer documents as
+may be necessary to cause the above transfers of intellectual property rights to
+be legally formalized. All such documents shall be prepared by ACH at ACH's
+expense, and provided to Visteon with at least thirty (30) days notice.
+
+     Section 6.02. Visteon's IP Warranty. Visteon warrants that it has the right
+to make the assignment to ACH of intellectual property rights in the inventions
+and works of authorship created by Leased Employees.
+
+     Section 6.03. WARRANTY DISCLAIMER AND LIMITATION OF LIABILITY.
+
+     (a) EXCEPT TO THE EXTENT OF THE WARRANTY MADE ABOVE, VISTEON MAKES NO OTHER
+REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED. BY WAY OF EXAMPLE BUT NOT OF
+LIMITATION, VISTEON MAKES NO REPRESENTATIONS OR WARRANTIES OF MERCHANTABILITY OR
+FITNESS FOR ANY PARTICULAR PURPOSE. VISTEON SHALL IN NO EVENT BE LIABLE TO ACH,
+ITS SUCCESSORS, OR A THIRD PARTY FOR ANY DAMAGES, WHETHER DIRECT OR
+
+
+                                       14
+<PAGE>
+INDIRECT, SPECIAL OR GENERAL, CONSEQUENTIAL OR INCIDENTAL, ARISING FROM ANY LOSS
+CLAIMED AS A RESULT OF ACH'S USE OF THE INTELLECTUAL PROPERTY RIGHTS ASSIGNED
+HEREUNDER.
+
+     (b) VISTEON MAKES NO WARRANTY OR REPRESENTATION THAT THE INTELLECTUAL
+PROPERTY RIGHTS ASSIGNED HEREUNDER CAN BE USED FOR ANY PARTICULAR FUNCTION OR
+THAT ACH HAS THE ABILITY TO USE THEM. VISTEON ASSUMES NO RESPONSIBILITY FOR THE
+SAFETY, QUALITY, DESIGN, SPECIFICATIONS, COMPLETENESS, ACCURACY OR OTHER
+CHARACTERISTICS OF THE PERFORMANCE, OUTPUT OR END PRODUCT RESULTING FROM THE USE
+OF THE INTELLECTUAL PROPERTY RIGHTS ASSIGNED HEREUNDER.
+
+     (c) EXCEPT TO THE EXTENT OF THE WARRANTY PROVIDED ABOVE, NOTHING CONTAINED
+HEREIN SHALL BE CONSTRUED AS CONFERRING BY IMPLICATION, ESTOPPEL OR OTHERWISE
+THE INDEMNIFICATION OF ACH BY VISTEON AGAINST ANY CLAIM OF INFRINGEMENT OF OTHER
+THIRD PARTY INTELLECTUAL PROPERTY RIGHTS, WHETHER OR NOT THE EXERCISE OF ANY
+RIGHT GRANTED HEREIN NECESSARILY EMPLOYS OR REQUIRES THE PRACTICE OF ANY SUCH
+EXISTING OR SUBSEQUENTLY CREATED THIRD PARTY INTELLECTUAL PROPERTY RIGHTS.
+
+                                    ARTICLE 7
+                                    INDEMNITY
+
+     Section 7.01. ACH Indemnity. ACH shall indemnify Visteon and its affiliates
+("VISTEON INDEMNITEES") against and agrees to hold it harmless from any and all
+damage, loss, claim, liability and expense (including without limitation,
+reasonable attorneys' fees and expenses in connection with any action, suit or
+proceeding brought against any Visteon Indemnitee) incurred or suffered by any
+Visteon Indemnitee arising out of (i) the breach of any agreement made by ACH
+hereunder; (ii) any employment, payroll, benefit, workers compensation or other
+claims of any kind of any current or former Ford employee leased by Ford to ACH
+pursuant to the Ford Hourly Assignment Agreement dated as of even date herewith
+or the Ford Salaried Employee Assignment Agreement dated as of even date
+herewith or any agency employee retained directly by ACH, arising during the
+period of time the Ford employee is or was leased to ACH or the agency employee
+was retained directly by ACH; or (iii) any claim by any current or former Ford
+employee (or their dependents or beneficiaries), to the Pension Benefit Guaranty
+Corporation ("PBGC"), the Department of Labor ("DOL"), Internal Revenue Service
+("IRS"), the Securities and Exchange Commission ("SEC") or comparable federal or
+national agencies in the United States, arising out of or in connection with the
+operation, administration, funding or termination of any of the employee benefit
+plans applicable to the Ford employee that arise during the period of time the
+Ford employee is or was leased to ACH.
+
+     Section 7.02. Visteon Indemnity. Visteon shall indemnify ACH, Ford and
+their affiliates ("FORD INDEMNITEES") against and agrees to hold them harmless
+from any and all
+
+
+                                       15
+<PAGE>
+damage, loss, claim, liability and expense (including without limitation,
+reasonable attorneys' fees and expenses in connection with any action, suit or
+proceeding brought against any Ford Indemnitee) incurred or suffered by any Ford
+Indemnitee arising out of (i) breach of any agreement made by Visteon hereunder;
+(ii) employment, payroll, benefit, workers compensation, or other claims of any
+kind of any current or former Visteon Salaried Employee, including any current
+or former Leased Employee, or any agency employee provided by Visteon to ACH
+pursuant to this Agreement, regardless of when they arise; or (iii) any claim by
+any current or former Visteon Salaried Employee including any current or former
+Leased Employee (or their dependents or beneficiaries), to the PBGC, the DOL,
+IRS, SEC or comparable federal or national agencies in the United States,
+arising out of or in connection with the operation, administration, funding or
+termination of any of the employee benefit plans applicable to the Visteon
+Salaried Employees, including any current or former Leased Employee, that arise
+prior to, during or after the Lease Period.
+
+     Section 7.03. Indemnification Procedures. With respect to a Party's
+indemnity obligations hereunder with respect to third-party claims, the
+following procedures shall apply:
+
+(i)  Promptly after receipt by any entity entitled to indemnification hereunder
+     of notice of the commencement or threatened commencement of any civil,
+     criminal, administrative, or investigative action or proceeding involving a
+     claim in respect of which the indemnitee will seek indemnification pursuant
+     to the terms and conditions herein, the indemnitee shall notify the
+     indemnitor of such claim in writing. No failure to so notify an indemnitor
+     shall relieve it of its obligations under this Agreement except to the
+     extent that it can demonstrate damages attributable to such failure. Within
+     fifteen (15) days following receipt of written notice from the indemnitee
+     relating to any claim, but no later than ten (10) days before the date on
+     which any response to a complaint or summons is due, the indemnitor shall
+     notify the indemnitee in writing if the indemnitor acknowledges its
+     responsibilities and obligations with respect to such indemnification and
+     elects to assume control of the defense and settlement of that claim (a
+     "NOTICE OF ELECTION").
+
+(ii) If the indemnitor delivers a Notice of Election relating to any claim
+     within the required notice period, the indemnitor shall be entitled to have
+     sole control over the defense and all negotiations for the compromise or
+     settlement of such claim; provided that (i) the indemnitee shall be
+     entitled to participate in the defense of such claim and to employ counsel
+     at its own expense to assist in the handling of such claim, and (ii) the
+     indemnitor shall obtain the prior written approval of the indemnitee before
+     entering into any settlement of such claim or ceasing to defend against
+     such claim, unless the settlement provides for an unqualified release of
+     all claims against the indemnitee. The indemnitor shall not be required to
+     indemnify the indemnitee for any amount paid or payable by the indemnitee
+     in the settlement of any claim for which the indemnitor has delivered a
+     timely Notice of Election if such amount was agreed to without the written
+     consent of the indemnitor.
+
+
+                                       16
+<PAGE>
+(iii) If the indemnitor does not deliver a Notice of Election relating to any
+     claim within the required notice period, the indemnitee shall have the
+     right to defend the claim in such manner as it may deem appropriate, at the
+     cost and expense of the indemnitor. The indemnitor shall promptly reimburse
+     the indemnitee for all such costs and expenses.
+
+(iv) In a circumstance where the potential resolution of a legal or regulatory
+     matter by an indemnitor on behalf of an indemnitee under this Article would
+     involve equitable action on the part of the indemnitee, the indemnitor
+     shall have no authority to enter into any such resolution without the
+     written authority of the indemnitee. The indemnitor shall promptly notify
+     the indemnitee of the proposed resolution and request the indemnitee's
+     written authority to enter into the resolution, and provide such
+     information as requested by the indemnitee to facilitate indemnitee's
+     timely review. Indemnitee shall not withhold authority unreasonably, giving
+     full consideration to adverse business or labor relations impact on
+     indemnitee, provided, however, that indemnitor remains responsible for and
+     shall promptly reimburse indemnitee for all costs relating to indemnitee's
+     execution of the action.
+
+     Section 7.04. Survival of Indemnity Procedure. The provisions of this
+Article shall survive the termination of this Agreement indefinitely or until
+the latest date permitted by applicable law.
+
+                                    ARTICLE 8
+                                  MISCELLANEOUS
+
+     Section 8.01. Notices. All notices, requests and other communications to
+any Party hereunder shall be in writing (including facsimile transmission and
+electronic mail ("E-MAIL") transmission, so long as a receipt of such e-mail is
+requested and received) and shall be given,
+
+     if to ACH, to:
+
+        Ford Motor Company
+        Office of the Secretary
+        One American Road
+        11th Floor World Headquarters
+        Dearborn, Michigan 48126
+        Facsimile No.: (313) 248-8713
+        E-mail: psherry@ford.com
+
+     with a copy to:
+
+
+                                       17
+<PAGE>
+        Ford Motor Company
+        Office of the General Counsel
+        One American Road
+        Room 626 World Headquarters
+        Dearborn, Michigan 48126
+        Facsimile No.: (313) 322-0248
+        E-mail: bgoricha@ford.com
+
+     if to Visteon, to:
+
+        Visteon Corporation
+        One Village Center Drive
+        Van Buren Township, Michigan 48111
+        Attention: John Donofrio, General Counsel
+        Facsimile No.: (734) 710-7132
+        E-mail: jdonofri@visteon.com
+
+     with a copy to:
+
+        Weil, Gotshal & Manges LLP
+        767 Fifth Avenue
+        New York, NY 10153
+        Attention: Michael E. Lubowitz, Esq.
+        Facsimile No.: (212) 310-8007
+        E-mail: Michael.lubowitz@weil.com
+
+or such other address, facsimile number or e-mail as such Party may hereafter
+specify for the purpose by notice to the other Parties hereto. All such notices,
+requests and other communications shall be deemed received on the date of
+receipt by the recipient thereof if received prior to 5:00 p.m. in the place of
+receipt and such day is a business day in the place of receipt. Otherwise, any
+such notice, request or communication shall be deemed not to have been received
+until the next succeeding business day in the place of receipt.
+
+     Section 8.02. Amendments and Waivers. Any provision of this Agreement may
+be amended or waived if, but only if, such amendment or waiver is in writing and
+is signed, in the case of an amendment, by each Party to this Agreement, or in
+the case of a waiver, by the Party against whom the waiver is to be effective.
+
+No failure or delay by any Party in exercising any right, power or privilege
+hereunder shall operate as a waiver thereof nor shall any single or partial
+exercise thereof preclude any other or further exercise thereof or the exercise
+of any other right, power or privilege.
+
+     Section 8.03. Expenses. Except as otherwise provided herein, all costs and
+expenses incurred in connection with this Agreement shall be paid by the Party
+incurring such cost or expense.
+
+
+                                       18
+<PAGE>
+     Section 8.04. Successors and Assigns. The provisions of this Agreement
+shall be binding upon and inure to the benefit of the Parties hereto and their
+respective successors and permitted assigns; provided that no Party may assign,
+delegate or otherwise transfer any of its rights or obligations under this
+Agreement without the consent of each other Party hereto. Upon any such
+permitted assignment, the references in this Agreement to ACH shall also apply
+to any such assignee unless the context otherwise requires.
+
+     Section 8.05. Governing Law. This Agreement shall be governed by and
+construed in accordance with the law of the State of Michigan, without regard to
+the conflicts of law rules of such state.
+
+     Section 8.06. Dispute Resolution. If a dispute arises between the Parties
+relating to this Agreement, the following shall be the sole and exclusive
+procedure for enforcing the terms hereof and for seeking relief, including but
+not limited to damages, injunctive relief and specific performance:
+
+     (a) The Parties promptly shall hold a meeting of senior executives with
+decision-making authority to attempt in good faith to negotiate a mutually
+satisfactory resolution of the dispute; provided that no Party shall be under
+any obligation whatsoever to reach, accept or agree to any such resolution;
+provided further, that no such meeting shall be deemed to vitiate or reduce the
+obligations and liabilities of the Parties or be deemed a waiver by a Party
+hereto of any remedies to which such Party would otherwise be entitled.
+
+     (b) If the Parties are unable to negotiate a mutually satisfactory
+resolution as provided above, then upon request by either Party, the matter
+shall be submitted to binding arbitration before a sole arbitrator in accordance
+with the CPR Rules, including discovery rules, for Non-Administered Arbitration.
+Within five business days after the selection of the arbitrator, each Party
+shall submit its requested relief to the other Party and to the arbitrator with
+a view toward settling the matter prior to commencement of discovery. If no
+settlement is reached, then discovery shall proceed. Upon the conclusion of
+discovery, each Party shall again submit to the arbitrator its requested relief
+(which may be modified from the initial submission) and the arbitrator shall
+select only the entire requested relief submitted by one Party or the other, as
+the arbitrator deems most appropriate. The arbitrator shall not select one
+Party's requested relief as to certain claims or counterclaims and the other
+Party's requested relief as to other claims or counterclaims. Rather, the
+arbitrator must only select one or the other Party's entire requested relief on
+all of the asserted claims and counterclaims, and the arbitrator will enter a
+final ruling that adopts in whole such requested relief. The arbitrator will
+limit his/her final ruling to selecting the entire requested relief he/she
+considers the most appropriate from those submitted by the Parties.
+
+     (c) Arbitration shall take place in the City of Dearborn, Michigan unless
+the Parties agree otherwise or the arbitrator selected by the Parties orders
+otherwise. Punitive or exemplary damages shall not be awarded. This Section 8.06
+is subject to the Federal Arbitration Act, 28 U.S.C.A. Section 1, et seq., or
+comparable legislation in non-U.S. jurisdictions and judgment upon the award
+rendered by the arbitrator may be entered by any court having jurisdiction.
+
+
+                                       19
+<PAGE>
+     Section 8.07. Jurisdiction. Subject to Section 8.06, the Parties hereto
+agree that any suit, action or proceeding seeking to enforce any provision of,
+or based on any matter arising out of or in connection with, this Agreement or
+the transactions contemplated hereby shall be brought in any federal court
+sitting in Michigan or any Michigan State court sitting in the Wayne County or
+Oakland County, Michigan, so long as one of such courts shall have subject
+matter jurisdiction over such suit, action or proceeding, and that any cause of
+action arising out of this Agreement shall be deemed to have arisen from a
+transaction of business in the State of Michigan. Each of the Parties hereby
+irrevocably consents to the jurisdiction of such courts (and of the appropriate
+appellate courts therefrom) in any such suit, action or proceeding and
+irrevocably waives, to the fullest extent permitted by law, any objection that
+it may now or hereafter have to the laying of the venue of any such suit, action
+or proceeding in any such court or that any such suit, action or proceeding
+brought in any such court has been brought in an inconvenient forum. Process in
+any such suit, action or proceeding may be served on any Party anywhere in the
+world, whether within or without the jurisdiction of any such court.
+
+     Section 8.08. WAIVER OF JURY TRIAL. EACH OF THE PARTIES HERETO HEREBY
+IRREVOCABLY WAIVES ANY AND ALL RIGHT TO TRIAL BY JURY IN ANY LEGAL PROCEEDING
+ARISING OUT OF OR RELATED TO THIS AGREEMENT OR THE TRANSACTIONS CONTEMPLATED
+HEREBY.
+
+     Section 8.09. Counterparts; Effectiveness; Third Party Beneficiaries. This
+Agreement may be signed in any number of counterparts, each of which shall be an
+original, with the same effect as if the signatures thereto and hereto were upon
+the same instrument. This Agreement shall become effective when each Party
+hereto shall have received a counterpart hereof signed by all of the other
+Parties hereto. Until and unless each Party has received a counterpart hereof
+signed by the other Party hereto, this Agreement shall have no effect and no
+Party shall have any right or obligation hereunder (whether by virtue of any
+other oral or written agreement or other communication). No provision of this
+Agreement is intended to confer any rights, benefits, remedies, obligations or
+liabilities hereunder upon any Person other than the Parties hereto and their
+respective successors and permitted assigns under Section 8.04.
+
+     Section 8.10. Entire Agreement. This Agreement, the Employee Transition
+Agreement and the other documents executed in connection with this transaction
+constitute the entire agreement between the Parties with respect to the subject
+matter of this Agreement and supersede all prior agreements and understandings,
+both oral and written, between the Parties with respect to the subject matter of
+this Agreement, and the other transaction documents.
+
+     Section 8.11. Severability. If any term, provision, covenant or restriction
+of this Agreement is held by a court of competent jurisdiction or other
+authority to be invalid, void or unenforceable, the remainder of the terms,
+provisions, covenants and restrictions of this Agreement shall remain in full
+force and effect and shall in no way be affected, impaired or invalidated so
+long as the economic or legal substance of the transactions contemplated hereby
+is not affected in any manner materially adverse to any Party. Upon such a
+determination, the Parties shall negotiate in good faith to modify this
+Agreement so as to effect the original intent
+
+
+                                       20
+<PAGE>
+of the Parties as closely as possible in an acceptable manner in order that the
+transactions contemplated hereby be consummated as originally contemplated to
+the fullest extent possible.
+
+     Section 8.12. Specific Performance. The Parties hereto agree that
+irreparable damage would occur if any provision of this Agreement were not
+performed in accordance with the terms hereof and that the Parties shall be
+entitled to an injunction or injunctions to prevent breaches of this Agreement
+or to enforce specifically the performance of the terms and provisions hereof in
+the courts specified in Section 8.07.
+
+                      [signatures appear on following page]
+
+
+                                       21
+<PAGE>
+     IN WITNESS WHEREOF, the Parties hereto have caused this Agreement to be
+duly executed by their respective authorized officers as of the day and year
+first above written.
+
+VISTEON CORPORATION                     AUTOMOTIVE COMPONENTS HOLDINGS, LLC
+
+
+By: /s/ James F. Palmer                 By: /s/ James F. Palmer
+    ---------------------------------       ------------------------------------
+Name: James F. Palmer                   Name: James F. Palmer
+Title: Executive Vice President and     Title: President
+       Chief Financial Officer
+
+
+                                       22
+</TEXT>
+</DOCUMENT>

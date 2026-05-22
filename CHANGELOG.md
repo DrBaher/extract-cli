@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.13] - 2026-05-22
+
+### Added
+- **Accuracy benchmark** (`tests/eval/`, `make eval`). Scores the deterministic
+  tier against a small corpus of real, executed SEC-EDGAR contracts with
+  hand-verified ground truth, reporting precision/recall/F1 per field — turning
+  "best-effort" into a measured number. Current: parties F1 0.96, effective
+  date / governing law / jurisdiction 1.00, clause recall 0.45 (heading
+  detection on dense HTML is the known weak spot). `tests/test_eval.py` gates it
+  so accuracy can't silently regress.
+
+### Fixed / improved (surfaced by the benchmark)
+- **Governing-law detection** now covers the common connector phrasings beyond
+  "governed by the laws of X": "governed by, **and enforced in accordance
+  with,** the laws of X", "**interpreted and enforced in accordance with** the
+  laws of X", "**construed under** the laws of X". (Benchmark: governing law
+  0.67 → 1.00.)
+- **Jurisdiction normalization** now maps **all 50 US states + DC** (plus more
+  Canadian provinces / UK nations / countries), not just a dozen. (Benchmark:
+  jurisdiction 0.67 → 1.00.)
+
 ## [0.1.12] - 2026-05-22
 
 ### Security
@@ -333,6 +354,7 @@ Initial release — the open-loop front door of the contract-ops CLI suite.
   intentionally *not* governed by the output schema (the schema describes the
   full default output).
 
+[0.1.13]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.13
 [0.1.12]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.12
 [0.1.11]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.11
 [0.1.10]: https://github.com/DrBaher/extract-cli/releases/tag/v0.1.10

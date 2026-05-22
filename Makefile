@@ -40,6 +40,9 @@ coverage:
 typecheck:
 	$(PYTHON) -m mypy --strict extract_cli.py
 
+eval:
+	$(PYTHON) tests/eval/evaluate.py
+
 build: clean
 	$(PYTHON) -m build
 

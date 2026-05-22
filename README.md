@@ -218,13 +218,33 @@ paths. Configure it once and every suite tool that adopts the same lookup gets
 LLM features for free. Without it, `--llm` just warns and returns the
 deterministic output.
 
+## Accuracy
+
+Line coverage tells you the code runs; it doesn't tell you the extraction is
+*correct*. `make eval` scores the deterministic tier against a small corpus of
+**real, executed contracts** (SEC EDGAR filings) with hand-verified ground truth
+([`tests/eval/`](tests/eval/)), reporting precision/recall per field:
+
+| Field | Score |
+|---|---|
+| parties | P 1.00 · R 0.92 · F1 0.96 |
+| effective date | accuracy 1.00 |
+| governing law | accuracy 1.00 |
+| jurisdiction (normalized) | accuracy 1.00 |
+| clauses (recall on verified sections) | 0.45 |
+
+Clause recall is the honest weak spot — heading detection on dense HTML
+exhibits still misses sections. A test (`tests/test_eval.py`) gates these so
+accuracy can't silently regress.
+
 ## Development
 
 ```bash
 make install      # editable install with the [dev] extra
 make test         # full suite
-make coverage     # suite + coverage report
+make coverage     # suite + coverage report (installs extras; fails under 100%)
 make typecheck    # mypy --strict
+make eval         # accuracy benchmark vs the labeled corpus
 make build        # wheel + sdist
 make smoke        # build, install the wheel in a clean venv, run it
 make spec-check   # assert docs/spec schema == `extract schema`
