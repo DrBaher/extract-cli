@@ -110,6 +110,24 @@ def test_missing_file_exit_2(tmp_path: Any, capsys: pytest.CaptureFixture[str]) 
     assert "error:" in capsys.readouterr().err
 
 
+def test_unreadable_file_exit_2(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A readable-but-locked file (PermissionError on read) must exit cleanly with
+    code 2 and an `error:` line -- never a raw OSError traceback."""
+    f = tmp_path / "locked.md"
+    f.write_text("CONFIDENTIALITY AGREEMENT\n")
+
+    def _boom(self: Any) -> bytes:
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(ex.Path, "read_bytes", _boom)
+    assert ex.main([str(f)]) == 2
+    err = capsys.readouterr().err
+    assert err.startswith("error:") or "error:" in err
+    assert "cannot read" in err
+
+
 def test_completion_handler(capsys: pytest.CaptureFixture[str]) -> None:
     assert ex.main(["__complete", "commands"]) == 0
     assert "schema" in capsys.readouterr().out.split()

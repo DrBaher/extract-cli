@@ -6,6 +6,17 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.15] - 2026-05-31
+
+### Fixed
+- **Locked/unreadable input no longer crashes with a raw traceback.** `load_source`
+  guarded `exists()`/`is_dir()`/size but read the bytes unguarded, so a
+  readable-but-locked file (e.g. `chmod 000`) raised a bare `PermissionError` that
+  escaped `main()` (which only handles `ExtractError`) — a raw traceback with no
+  clean exit code. The read is now wrapped: any `OSError` becomes
+  `ExtractError("cannot read <path>: …")`, yielding a clean `error:` line and exit
+  code 2.
+
 ## [0.1.14] - 2026-05-22
 
 ### Improved

@@ -45,7 +45,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-__version__ = "0.1.14"
+__version__ = "0.1.15"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
@@ -1529,7 +1529,10 @@ def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, s
         raise ExtractError(
             f"file is too large ({size // (1024 * 1024)} MB > "
             f"{MAX_INPUT_BYTES // (1024 * 1024)} MB cap); refusing to read")
-    raw = path.read_bytes()
+    try:
+        raw = path.read_bytes()
+    except OSError as e:
+        raise ExtractError(f"cannot read {path}: {e}")
     fmt = _detect_format(path, raw)
     warnings: List[str] = []
     if fmt in ("markdown", "text"):
