@@ -6,6 +6,25 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.16] - 2026-06-03
+
+Security/robustness fixes from a follow-up source audit.
+
+### Fixed
+- **ReDoS in the notice-period regex (`_NOTICE_RE`).** A long unbroken letter/digit
+  run backtracked super-linearly (~30 KB single token ≈ 15 s); the leading number
+  token is now anchored on a word boundary and length-bounded (now < 1 ms).
+- **Signatory title/name desync.** `extract_signatories` now pairs each title to the
+  nearest following `Title:`/`Its:` within the same signature block, structurally,
+  instead of by global index — so a deduped/rejected name no longer shifts later
+  titles and titles never bleed across blocks.
+- **`--fields` no longer suppresses the low-signal exit-1 finding.** The finding is
+  computed on the full extraction before the `--fields` subset is applied.
+- **LLM config can no longer be injected from the working directory.** Config is
+  resolved only from the fixed user dir (`~/.config/contract-ops`, honoring
+  `XDG_CONFIG_HOME`); the CWD-relative `./config/llm.json` lookup (which let any
+  directory inject an `api_key`) was removed.
+
 ## [0.1.15] - 2026-05-31
 
 ### Fixed
