@@ -105,6 +105,15 @@ def test_low_signal_exit_code(capsys: pytest.CaptureFixture[str]) -> None:
     assert "scanned" in err or "no high-signal" in err
 
 
+def test_low_signal_exit_code_with_fields(capsys: pytest.CaptureFixture[str]) -> None:
+    # Regression: --fields used to suppress the low-signal exit-1 finding. The
+    # exit code reflects the document, not which fields the caller projected.
+    code = ex.main([str(FIXTURES / "scanned.pdf"), "--fields", "parties"])
+    assert code == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert set(payload) == {"parties", "_meta"}
+
+
 def test_missing_file_exit_2(tmp_path: Any, capsys: pytest.CaptureFixture[str]) -> None:
     assert ex.main([str(tmp_path / "nope.md")]) == 2
     assert "error:" in capsys.readouterr().err

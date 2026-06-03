@@ -204,15 +204,15 @@ extract draft.docx | jq -e '.clauses | all(.confidence > 0.7)' && echo "ok to re
 
 ## LLM configuration (opt-in)
 
-`--llm` reads a shared suite config, in this order:
+`--llm` reads a shared suite config from a fixed user config location:
 
-1. `~/.config/contract-ops/llm.json`  (suite-wide — preferred)
-2. `./config/llm.json`                 (repo-local override)
+- `~/.config/contract-ops/llm.json`  (or `$XDG_CONFIG_HOME/contract-ops/llm.json`)
 
-Copy [`config/llm.json.example`](config/llm.json.example) to one of those
-paths. Configure it once and every suite tool that adopts the same lookup gets
-LLM features for free. Without it, `--llm` just warns and returns the
-deterministic output.
+Copy [`config/llm.json.example`](config/llm.json.example) to that path.
+Configure it once and every suite tool that adopts the same lookup gets LLM
+features for free. The config is never read from the current working directory,
+so running the CLI in an untrusted directory cannot inject an endpoint/api_key.
+Without it, `--llm` just warns and returns the deterministic output.
 
 ## Accuracy
 

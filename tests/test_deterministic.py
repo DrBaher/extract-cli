@@ -142,6 +142,49 @@ def test_term_length_and_notice() -> None:
     assert term["notice_period_days"]["value"] == 30
 
 
+def test_notice_re_linear_on_long_token() -> None:
+    # Regression: _NOTICE_RE used to backtrack super-linearly (ReDoS) on a long
+    # unbroken letter/digit run, since extract_term() runs it unconditionally on
+    # the flattened body. A ~30KB single token must return effectively instantly
+    # (and find nothing), not hang.
+    import time
+
+    blob = "a" * 30000
+    start = time.perf_counter()
+    out = ex.extract_term(blob)
+    elapsed = time.perf_counter() - start
+    assert elapsed < 1.0, f"notice regex took {elapsed:.2f}s on a 30KB token"
+    assert out["notice_period_days"]["source"] == "none"
+    # A real notice clause buried after the blob still matches.
+    out2 = ex.extract_term(blob + " upon thirty (30) days' written notice.")
+    assert out2["notice_period_days"]["value"] == 30
+
+
+def test_signatory_title_attribution_survives_skipped_name() -> None:
+    # Regression: titles were paired to names by global enumerate index, so a
+    # rejected/deduped name shifted every later title. Here the second "By:" is
+    # a blank placeholder (skipped); the real second signatory must still get
+    # *its own* title, not the first block's.
+    text = (
+        "Signatures\n\n"
+        "By: Jane Q. Doe\nTitle: CEO\n\n"
+        "By: _______________\n\n"
+        "By: John Smith\nTitle: Counsel\n"
+    )
+    s = ex.extract_signatories(text)
+    by_name = {x["name"]: x.get("title") for x in s}
+    assert by_name["Jane Q. Doe"] == "CEO"
+    assert by_name["John Smith"] == "Counsel"
+
+
+def test_signatory_title_does_not_bleed_across_blocks() -> None:
+    # A name with no title of its own must not borrow a later block's title.
+    text = "By: Jane Q. Doe\n\nBy: John Smith\nTitle: Counsel\n"
+    by_name = {x["name"]: x.get("title") for x in ex.extract_signatories(text)}
+    assert by_name["Jane Q. Doe"] is None
+    assert by_name["John Smith"] == "Counsel"
+
+
 def test_auto_renew_positive() -> None:
     text = ("shall automatically renew for successive one-year terms unless either "
             "party gives sixty (60) days' written notice of non-renewal.")

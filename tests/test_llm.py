@@ -143,3 +143,22 @@ def test_llm_config_lookup_prefers_suite_path(monkeypatch: pytest.MonkeyPatch,
                         (pathlib.Path(suite), pathlib.Path(local)))
     cfg = ex.load_llm_config()
     assert cfg is not None and cfg["api_key"] == "SUITE"
+
+
+def test_llm_config_dir_is_never_cwd_relative(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: object
+) -> None:
+    # Regression: the config lookup used to include a CWD-relative
+    # ./config/llm.json, letting any directory the CLI ran in inject an api_key
+    # (and thus an arbitrary request endpoint). The lookup must resolve only to
+    # the fixed user config dir, honoring $XDG_CONFIG_HOME.
+    import pathlib
+
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    expected = pathlib.Path(str(tmp_path)) / "contract-ops"  # type: ignore[arg-type]
+    assert ex._llm_config_dir() == expected
+    for p in ex.LLM_CONFIG_PATHS:
+        assert p.is_absolute(), f"config path is not absolute: {p}"
+
+    monkeypatch.delenv("XDG_CONFIG_HOME", raising=False)
+    assert ex._llm_config_dir() == pathlib.Path.home() / ".config" / "contract-ops"

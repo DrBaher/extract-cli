@@ -96,9 +96,11 @@ normalized titles.
 `--llm`):
 
 ```
-~/.config/contract-ops/llm.json        # suite-wide (preferred)
-./config/llm.json                       # repo-local override
+~/.config/contract-ops/llm.json        # suite-wide (or $XDG_CONFIG_HOME/contract-ops/llm.json)
 ```
+
+The config is read only from this fixed user config dir, never from the current
+working directory.
 
 Schema (matches [`config/llm.json.example`](../config/llm.json.example)):
 

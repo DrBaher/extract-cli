@@ -636,8 +636,12 @@ _TERM_LEN_RE = re.compile(
     r"[^.\n]{0,40}?\b(\d+|[A-Za-z]+)(?:\s*\(\d+\))?\s+(years?|months?|weeks?|days?)\b",
     re.IGNORECASE,
 )
+# Anchor the leading number token on a word boundary and bound its length so a
+# long unbroken letter/digit run cannot be retried char-by-char against the
+# mandatory trailing ``\s+`` (which would backtrack super-linearly -> ReDoS).
+# A real "<number> days' notice" token is never longer than these bounds.
 _NOTICE_RE = re.compile(
-    r"(\d+|[A-Za-z]+)(?:\s*\(\d+\))?\s+days?[’'`]?s?\s+"
+    r"\b(\d{1,4}|[A-Za-z]{1,12})(?:\s*\(\d+\))?\s+days?[’'`]?s?\s+"
     r"(?:prior\s+)?(?:written\s+)?notice",
     re.IGNORECASE,
 )
@@ -878,16 +882,35 @@ def _clean_sig_value(raw: str) -> Optional[str]:
 def extract_signatories(text: str) -> List[JSON]:
     """Best-effort signature-block names (and titles, when adjacent). Skips
     unfilled placeholders. Blank on a template; populated on executed paper."""
-    titles = [_clean_sig_value(m.group(1)) for m in _SIG_TITLE_RE.finditer(text)]
+    # Collect title matches with their positions so each name can be paired to
+    # the title that structurally follows it (the next Title:/Its: line before
+    # the following name), rather than by a global index that desyncs whenever a
+    # name is rejected or deduped.
+    titles = [(m.start(), _clean_sig_value(m.group(1)))
+              for m in _SIG_TITLE_RE.finditer(text)]
+    names = [(m.end(), _clean_sig_value(m.group(1)))
+             for m in _SIGNATORY_RE.finditer(text)]
     out: List[JSON] = []
     seen: Dict[str, None] = {}
-    for i, m in enumerate(_SIGNATORY_RE.finditer(text)):
-        name = _clean_sig_value(m.group(1))
+    for idx, (name_end, name) in enumerate(names):
         if name is None or name in seen:
             continue
         seen[name] = None
+        # The title belongs to this name only if it sits between this name and
+        # the next captured name (in any state), so titles never bleed across
+        # signature blocks.
+        next_name_pos = names[idx + 1][0] if idx + 1 < len(names) else None
+        title = None
+        for tpos, tval in titles:
+            if tpos < name_end:
+                continue
+            if next_name_pos is not None and tpos >= next_name_pos:
+                break
+            if tval is not None:
+                title = tval
+                break
         entry: JSON = {"name": name, "confidence": CONF_SIGNATORY, "source": "deterministic"}
-        entry["title"] = titles[i] if i < len(titles) else None
+        entry["title"] = title
         out.append(entry)
         if len(out) >= 12:
             break
@@ -1617,15 +1640,25 @@ def _is_low_signal(result: JSON) -> bool:
 # LLM tier  (opt-in only, never in a hot path)
 # ---------------------------------------------------------------------------
 
+def _llm_config_dir() -> Path:
+    """The suite-shared config directory: $XDG_CONFIG_HOME/contract-ops if set,
+    else ~/.config/contract-ops. Never CWD-relative -- a config loaded from the
+    current directory would let any directory the CLI is run in inject an
+    api_key (and thus an arbitrary request endpoint)."""
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    base = Path(xdg) if xdg else Path.home() / ".config"
+    return base / "contract-ops"
+
+
 LLM_CONFIG_PATHS = (
-    Path.home() / ".config" / "contract-ops" / "llm.json",
-    Path("config") / "llm.json",
+    _llm_config_dir() / "llm.json",
 )
 
 
 def load_llm_config() -> Optional[JSON]:
-    """Suite-shared LLM config lookup: ~/.config/contract-ops/llm.json first,
-    then a repo-local ./config/llm.json. Returns the first valid one, else None."""
+    """Suite-shared LLM config lookup at the fixed user config dir
+    (~/.config/contract-ops/llm.json, or $XDG_CONFIG_HOME/contract-ops). Returns
+    the first valid one, else None. Deliberately not CWD-relative."""
     for p in LLM_CONFIG_PATHS:
         try:
             if p.is_file():
@@ -1755,8 +1788,8 @@ def llm_enrich(result: JSON, text: str, args_ns: argparse.Namespace) -> None:
     to stderr and the deterministic output is left untouched."""
     cfg = load_llm_config()
     if cfg is None:
-        _warn(args_ns, "no LLM config found (~/.config/contract-ops/llm.json or "
-                       "./config/llm.json); skipping --llm enrichment")
+        _warn(args_ns, "no LLM config found (~/.config/contract-ops/llm.json); "
+                       "skipping --llm enrichment")
         return
     want_clauses = not result["clauses"]
     prompt = _build_llm_prompt(text, want_clauses)
@@ -2181,6 +2214,10 @@ def cmd_extract(args: argparse.Namespace) -> int:
         llm_enrich(result, text, args)
 
     fmt_out = "json" if args.json else args.format
+    # Compute the low-signal finding on the full extraction *before* any
+    # --fields subset drops the parties/clauses/etc. keys it inspects, so the
+    # exit code reflects the document, not which fields the caller asked to see.
+    low_signal = _is_low_signal(result)
     if args.fields:
         result = _apply_field_subset(result, args.fields.split(","))
 
@@ -2190,7 +2227,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
         f"clauses={len(result.get('clauses', []))}",
         f"tiers={','.join(result['_meta']['tiers_used'])} "
         f"llm_used={result['_meta']['llm_used']}",
-        f"low_signal={_is_low_signal(result)}" if not args.fields else "fields_subset=on",
+        f"low_signal={low_signal}",
     )
 
     if args.silent and fmt_out != "json":
@@ -2200,7 +2237,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
     else:
         print(render_json(result, args.no_confidence))
 
-    if not args.fields and _is_low_signal(result):
+    if low_signal:
         _warn(args, "document produced no high-signal fields (parties/clauses/dates); "
                     "it may be scanned, image-only, or unstructured")
         return 1
