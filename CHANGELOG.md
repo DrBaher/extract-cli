@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.17] - 2026-06-04
+
+### Fixed
+- **`--version`/`--catalog` now report the real package version.** The module
+  `__version__` had drifted to `0.1.15` while the package shipped as `0.1.16`, so
+  the CLI and its discovery catalog under-reported their version. A new test now
+  pins `__version__` to the `pyproject.toml` version so this can't recur.
+
 ## [0.1.16] - 2026-06-03
 
 Security/robustness fixes from a follow-up source audit.
