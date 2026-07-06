@@ -43,13 +43,13 @@ import sys
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
-__version__ = "0.1.17"
+__version__ = "0.1.18"
 
 # Bumped independently of the package version when the *extraction logic*
 # changes in a way downstream consumers should notice. Embedded in `_meta`.
-EXTRACTOR_VERSION = "0.1.14"
+EXTRACTOR_VERSION = "0.1.18"
 
 # JSON Schema version of the output contract (docs/spec/extract-output.schema.json).
 SCHEMA_VERSION = 1
@@ -1395,8 +1395,9 @@ def _read_docx_stdlib(raw: bytes) -> str:
 
 def _read_pdf(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str, List[str]]:
     """Extract text from a .pdf. Uses pypdf when the optional [pdf] extra is
-    installed; otherwise a stdlib best-effort reader (zlib FlateDecode + text
-    operators). Scanned/image-only PDFs yield no text and are warned about.
+    installed; otherwise the stdlib reader (xref/object streams, FlateDecode,
+    ToUnicode CMaps -- see _pdf_structured_text). When no text comes out, the
+    stdlib reader reports WHY (scanned vs. undecodable vs. encrypted).
 
     `prefer_optional=False` forces the stdlib reader regardless of what's
     installed -- used to pin reproducible golden fixtures."""
@@ -1408,14 +1409,21 @@ def _read_pdf(path: Path, raw: bytes, prefer_optional: bool = True) -> Tuple[str
             import io
             reader = reader_cls(io.BytesIO(raw))
             pages = [page.extract_text() or "" for page in reader.pages]
-            return "\n\n".join(pages), warnings
+            joined = "\n\n".join(pages)
+            # Empty pypdf output: fall through to the stdlib reader, which
+            # both nets some cases pypdf misses and -- when there really is
+            # nothing -- diagnoses WHY (scanned vs. encrypted vs. unsupported).
+            if joined.strip():
+                return joined, warnings
         except Exception as e:  # pragma: no cover - fidelity path
             warnings.append(f"pypdf read failed ({e}); falling back to stdlib reader")
     try:
-        text = _read_pdf_stdlib(raw)
+        text, note = _read_pdf_stdlib(raw)
     except Exception as e:  # pragma: no cover - defensive; stdlib reader is bomb-guarded
         warnings.append(f"could not parse .pdf ({e}); treating as empty")
         return "", warnings
+    if note:
+        warnings.append(note)
     return text, warnings
 
 
@@ -1503,7 +1511,11 @@ def _mostly_printable(s: str) -> bool:
     return printable / len(s) >= 0.85
 
 
-def _read_pdf_stdlib(raw: bytes) -> str:
+def _pdf_scan_text(raw: bytes) -> str:
+    """Legacy heuristic reader: inflate every `stream ... endstream` blob and
+    pull text operators out of whatever decompresses. Kept as the fallback for
+    files whose structure `_pdf_structured_text` can't decode (damaged xref,
+    exotic filters)."""
     import zlib
 
     chunks: List[str] = []
@@ -1531,6 +1543,932 @@ def _read_pdf_stdlib(raw: bytes) -> str:
             chunks.append(piece)
         idx = e + len(b"endstream")
     return "\n".join(chunks)
+
+
+# ---------------------------------------------------------------------------
+# Structured stdlib PDF parsing (xref streams, object streams, ToUnicode)
+# ---------------------------------------------------------------------------
+# Modern producers (Word, HexaPDF/SignWell, DocuSign, Ghostscript, qpdf,
+# Acrobat's optimizer) write PDF 1.5+ files where the cross-reference is a
+# compressed /XRef stream, most objects live inside compressed /ObjStm object
+# streams, and text is shown as CID glyph codes (hex strings) that only the
+# font's /ToUnicode CMap can turn back into Unicode. e-signed contracts -- the
+# highest-value inputs -- are almost always this shape, so the stdlib tier
+# parses the real object graph rather than guessing from raw bytes.
+
+_PDF_WS = b"\x00\t\n\x0c\r "
+_PDF_DELIMS = b"()<>[]{}/%"
+_PDF_MAX_XREF_SECTIONS = 64
+_PDF_MAX_XREF_ENTRIES = 2_000_000
+_PDF_MAX_PAGES = 5_000
+_PDF_MAX_CMAP_ENTRIES = 1 << 17
+_PDF_MAX_FORM_XOBJECTS = 256
+
+
+class _PdfRef:
+    """An unresolved indirect reference (`N G R`)."""
+    __slots__ = ("num",)
+
+    def __init__(self, num: int) -> None:
+        self.num = num
+
+
+class _PdfName:
+    """A PDF name token seen on a content-stream operand stack (`/F1`).
+    Distinct from `str` so it can't be confused with decoded string data."""
+    __slots__ = ("value",)
+
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+
+class _PdfStream:
+    """A stream object: its dictionary plus the raw (still-encoded) data."""
+    __slots__ = ("sdict", "raw")
+
+    def __init__(self, sdict: Dict[str, Any], raw: bytes) -> None:
+        self.sdict = sdict
+        self.raw = raw
+
+
+def _pdf_skip_ws(data: bytes, pos: int) -> int:
+    n = len(data)
+    while pos < n:
+        c = data[pos]
+        if c == 0x25:  # % comment runs to end of line
+            nl = data.find(b"\n", pos)
+            pos = n if nl == -1 else nl + 1
+        elif c in _PDF_WS:
+            pos += 1
+        else:
+            break
+    return pos
+
+
+def _pdf_parse_name(data: bytes, pos: int) -> Tuple[str, int]:
+    """Parse a name starting at the `/` at `pos`. Returns (name, newpos)."""
+    i = pos + 1
+    n = len(data)
+    out = bytearray()
+    while i < n:
+        c = data[i]
+        if c in _PDF_WS or c in _PDF_DELIMS:
+            break
+        if c == 0x23 and i + 2 < n:  # #xx hex escape
+            try:
+                out.append(int(data[i + 1:i + 3], 16))
+                i += 3
+                continue
+            except ValueError:
+                pass
+        out.append(c)
+        i += 1
+    return out.decode("latin-1"), i
+
+
+def _pdf_parse_literal_string(data: bytes, pos: int) -> Tuple[bytes, int]:
+    """Parse a literal string starting at the `(` at `pos`. Handles balanced
+    parens, backslash escapes and octal codes. Returns (bytes, newpos)."""
+    out = bytearray()
+    depth = 1
+    i = pos + 1
+    n = len(data)
+    while i < n:
+        c = data[i]
+        if c == 0x5C and i + 1 < n:  # backslash escape
+            nxt = data[i + 1]
+            i += 2
+            if nxt in b"nrtbf":
+                out.append({0x6E: 10, 0x72: 13, 0x74: 9, 0x62: 8, 0x66: 12}[nxt])
+            elif nxt in b"()\\":
+                out.append(nxt)
+            elif nxt == 0x0A:  # line continuation
+                pass
+            elif nxt == 0x0D:
+                if i < n and data[i] == 0x0A:
+                    i += 1
+            elif 0x30 <= nxt <= 0x37:  # up to 3 octal digits
+                oct_val = nxt - 0x30
+                for _ in range(2):
+                    if i < n and 0x30 <= data[i] <= 0x37:
+                        oct_val = oct_val * 8 + (data[i] - 0x30)
+                        i += 1
+                out.append(oct_val & 0xFF)
+            else:
+                out.append(nxt)
+        elif c == 0x28:  # (
+            depth += 1
+            out.append(c)
+            i += 1
+        elif c == 0x29:  # )
+            depth -= 1
+            if depth == 0:
+                return bytes(out), i + 1
+            out.append(c)
+            i += 1
+        else:
+            out.append(c)
+            i += 1
+    raise ValueError("pdf: unterminated literal string")
+
+
+def _pdf_parse_hex_string(data: bytes, pos: int) -> Tuple[bytes, int]:
+    """Parse a hex string starting at the `<` at `pos`."""
+    end = data.find(b">", pos)
+    if end == -1:
+        raise ValueError("pdf: unterminated hex string")
+    hx = re.sub(rb"[^0-9A-Fa-f]", b"", data[pos + 1:end])
+    if len(hx) % 2:
+        hx += b"0"
+    return bytes.fromhex(hx.decode("ascii")), end + 1
+
+
+_PDF_NUMBER_RE = re.compile(rb"[+-]?(?:\d+\.\d*|\.\d+|\d+)")
+_PDF_REF_TAIL_RE = re.compile(rb"\s+(\d{1,7})\s+R(?![0-9A-Za-z])")
+
+
+def _pdf_parse_value(data: bytes, pos: int, depth: int = 0) -> Tuple[Any, int]:
+    """Recursive-descent parser for one PDF value (dict/array/name/string/
+    number/ref/bool/null). Returns (value, newpos). Names parse to `str`,
+    strings to `bytes`, refs to `_PdfRef`."""
+    if depth > 48:
+        raise ValueError("pdf: value nesting too deep")
+    pos = _pdf_skip_ws(data, pos)
+    if pos >= len(data):
+        raise ValueError("pdf: unexpected end of data")
+    c = data[pos]
+    if data.startswith(b"<<", pos):
+        pos += 2
+        d: Dict[str, Any] = {}
+        while True:
+            pos = _pdf_skip_ws(data, pos)
+            if data.startswith(b">>", pos):
+                return d, pos + 2
+            if pos >= len(data) or data[pos] != 0x2F:
+                raise ValueError("pdf: malformed dictionary")
+            key, pos = _pdf_parse_name(data, pos)
+            val, pos = _pdf_parse_value(data, pos, depth + 1)
+            d[key] = val
+    if c == 0x3C:  # < hex string
+        return _pdf_parse_hex_string(data, pos)
+    if c == 0x2F:  # /name
+        return _pdf_parse_name(data, pos)
+    if c == 0x5B:  # [ array
+        pos += 1
+        arr: List[Any] = []
+        while True:
+            pos = _pdf_skip_ws(data, pos)
+            if pos >= len(data):
+                raise ValueError("pdf: unterminated array")
+            if data[pos] == 0x5D:
+                return arr, pos + 1
+            item, pos = _pdf_parse_value(data, pos, depth + 1)
+            arr.append(item)
+    if c == 0x28:  # ( literal string
+        return _pdf_parse_literal_string(data, pos)
+    if data.startswith(b"true", pos):
+        return True, pos + 4
+    if data.startswith(b"false", pos):
+        return False, pos + 5
+    if data.startswith(b"null", pos):
+        return None, pos + 4
+    m = _PDF_NUMBER_RE.match(data, pos)
+    if not m:
+        raise ValueError(f"pdf: unparsable token at offset {pos}")
+    tok = m.group(0)
+    npos = m.end()
+    if b"." in tok:
+        return float(tok), npos
+    num = int(tok)
+    if num >= 0:
+        rm = _PDF_REF_TAIL_RE.match(data, npos)
+        if rm:
+            return _PdfRef(num), rm.end()
+    return num, npos
+
+
+def _pdf_unpredict(data: bytes, parms: Dict[str, Any]) -> bytes:
+    """Undo a /Predictor (TIFF 2 or PNG 10-15) applied before compression.
+    XRef streams are almost always PNG-Up predicted."""
+    predictor = parms.get("Predictor", 1)
+    if not isinstance(predictor, int) or predictor < 2:
+        return data
+    colors = parms.get("Colors", 1) if isinstance(parms.get("Colors", 1), int) else 1
+    bpc = parms.get("BitsPerComponent", 8) if isinstance(parms.get("BitsPerComponent", 8), int) else 8
+    columns = parms.get("Columns", 1) if isinstance(parms.get("Columns", 1), int) else 1
+    bpp = max(1, (colors * bpc + 7) // 8)
+    rowlen = max(1, (colors * bpc * columns + 7) // 8)
+    if predictor == 2:  # TIFF horizontal differencing (8-bit only)
+        if bpc != 8:
+            return data
+        out = bytearray(data)
+        for r in range(0, len(out) - rowlen + 1, rowlen):
+            for i in range(bpp, rowlen):
+                out[r + i] = (out[r + i] + out[r + i - bpp]) & 0xFF
+        return bytes(out)
+    # PNG predictors: each row is prefixed with a per-row filter-type byte.
+    out2 = bytearray()
+    prev = bytearray(rowlen)
+    pos = 0
+    n = len(data)
+    while pos < n:
+        ftype = data[pos]
+        pos += 1
+        row = bytearray(data[pos:pos + rowlen])
+        pos += len(row)
+        for i in range(len(row)):
+            left = row[i - bpp] if i >= bpp else 0
+            up = prev[i] if i < len(prev) else 0
+            upleft = prev[i - bpp] if bpp <= i < len(prev) + bpp and i - bpp < len(prev) else 0
+            if ftype == 1:
+                row[i] = (row[i] + left) & 0xFF
+            elif ftype == 2:
+                row[i] = (row[i] + up) & 0xFF
+            elif ftype == 3:
+                row[i] = (row[i] + (left + up) // 2) & 0xFF
+            elif ftype == 4:
+                p = left + up - upleft
+                pa, pb, pc = abs(p - left), abs(p - up), abs(p - upleft)
+                if pa <= pb and pa <= pc:
+                    row[i] = (row[i] + left) & 0xFF
+                elif pb <= pc:
+                    row[i] = (row[i] + up) & 0xFF
+                else:
+                    row[i] = (row[i] + upleft) & 0xFF
+        out2 += row
+        prev = row
+    return bytes(out2)
+
+
+class _PdfDoc:
+    """Minimal PDF object-graph reader: xref chain (classic tables, /XRef
+    streams, hybrid /XRefStm), lazy object resolution including objects packed
+    in /ObjStm object streams, and budget-guarded stream decoding."""
+
+    def __init__(self, raw: bytes) -> None:
+        self.raw = raw
+        self.budget = MAX_DECOMPRESSED_BYTES
+        self.xref: Dict[int, Tuple[int, int, int]] = {}  # num -> (type, a, b)
+        self.trailer: Dict[str, Any] = {}
+        self.font_cache: Dict[int, Optional[Callable[[bytes], str]]] = {}
+        self._cache: Dict[int, Any] = {}
+        self._loading: Set[int] = set()
+        self._objstm_loaded: Set[int] = set()
+        self._load_xref_chain()
+
+    # -- xref ---------------------------------------------------------------
+
+    def _load_xref_chain(self) -> None:
+        last = None
+        for last in re.finditer(rb"startxref\s+(\d+)", self.raw[-4096:]):
+            pass
+        if last is None:
+            raise ValueError("pdf: no startxref")
+        queue: List[int] = [int(last.group(1))]
+        seen: Set[int] = set()
+        first = True
+        while queue and len(seen) < _PDF_MAX_XREF_SECTIONS:
+            off = queue.pop(0)
+            if off in seen or not 0 <= off < len(self.raw):
+                continue
+            seen.add(off)
+            try:
+                pos = _pdf_skip_ws(self.raw, off)
+                if self.raw.startswith(b"xref", pos):
+                    section = self._parse_classic_xref(pos + 4)
+                else:
+                    section = self._parse_xref_stream(off)
+            except ValueError:
+                if first:
+                    raise
+                continue  # a broken /Prev section loses history, not the doc
+            first = False
+            for key, val in section.items():
+                self.trailer.setdefault(key, val)
+            # Newest sections are processed first and win (setdefault above and
+            # in the entry parsers); /XRefStm (hybrid files) before /Prev.
+            for key in ("XRefStm", "Prev"):
+                v = section.get(key)
+                if isinstance(v, int):
+                    queue.append(v)
+        if "Root" not in self.trailer:
+            raise ValueError("pdf: no /Root in trailer")
+
+    def _parse_classic_xref(self, pos: int) -> Dict[str, Any]:
+        raw = self.raw
+        while True:
+            pos = _pdf_skip_ws(raw, pos)
+            if raw.startswith(b"trailer", pos):
+                tr, _ = _pdf_parse_value(raw, pos + len(b"trailer"))
+                return tr if isinstance(tr, dict) else {}
+            m = re.match(rb"(\d+)\s+(\d+)", raw[pos:pos + 48])
+            if not m:
+                return {}
+            start = int(m.group(1))
+            count = min(int(m.group(2)), _PDF_MAX_XREF_ENTRIES)
+            pos += m.end()
+            for j in range(count):
+                pos = _pdf_skip_ws(raw, pos)
+                em = re.match(rb"(\d{10})\s(\d{5})\s([nf])", raw[pos:pos + 20])
+                if not em:
+                    return {}
+                if em.group(3) == b"n":
+                    self.xref.setdefault(start + j, (1, int(em.group(1)), 0))
+                pos += em.end()
+
+    def _parse_xref_stream(self, off: int) -> Dict[str, Any]:
+        obj = self._parse_indirect_at(off)
+        if not isinstance(obj, _PdfStream) or obj.sdict.get("Type") != "XRef":
+            raise ValueError("pdf: startxref does not point at an xref")
+        d = obj.sdict
+        data = self.decode_stream(obj)
+        w = d.get("W")
+        size = d.get("Size")
+        if not (isinstance(w, list) and 1 <= len(w) <= 4
+                and all(isinstance(x, int) and 0 <= x <= 8 for x in w)):
+            raise ValueError("pdf: bad /W in xref stream")
+        if not isinstance(size, int) or size < 0:
+            raise ValueError("pdf: bad /Size in xref stream")
+        index = d.get("Index")
+        if not (isinstance(index, list) and len(index) % 2 == 0
+                and all(isinstance(x, int) and x >= 0 for x in index)):
+            index = [0, size]
+        rowlen = sum(w)
+        defaults = [1, 0, 0]  # a zero-width field 1 means "type 1"
+        pos = 0
+        total = 0
+        for k in range(0, len(index), 2):
+            start, count = index[k], index[k + 1]
+            for j in range(count):
+                if pos + rowlen > len(data) or total >= _PDF_MAX_XREF_ENTRIES:
+                    break
+                total += 1
+                fields: List[int] = []
+                for fi, width in enumerate(w):
+                    if width == 0:
+                        fields.append(defaults[fi] if fi < 3 else 0)
+                    else:
+                        fields.append(int.from_bytes(data[pos:pos + width], "big"))
+                        pos += width
+                while len(fields) < 3:
+                    fields.append(0)
+                num = start + j
+                if fields[0] in (1, 2):
+                    self.xref.setdefault(num, (fields[0], fields[1], fields[2]))
+        return d
+
+    # -- objects ------------------------------------------------------------
+
+    def _parse_indirect_at(self, off: int) -> Any:
+        raw = self.raw
+        m = re.match(rb"(\d+)\s+(\d+)\s+obj\b", raw[off:off + 48])
+        if not m:
+            raise ValueError("pdf: expected indirect object")
+        val, pos = _pdf_parse_value(raw, off + m.end())
+        pos = _pdf_skip_ws(raw, pos)
+        if not (isinstance(val, dict) and raw.startswith(b"stream", pos)):
+            return val
+        pos += len(b"stream")
+        if raw.startswith(b"\r\n", pos):
+            pos += 2
+        elif pos < len(raw) and raw[pos] in b"\r\n":
+            pos += 1
+        data: Optional[bytes] = None
+        try:
+            length = self.deref(val.get("Length"))
+        except ValueError:
+            length = None
+        if isinstance(length, int) and 0 <= length <= len(raw) - pos:
+            candidate = raw[pos:pos + length]
+            after = _pdf_skip_ws(raw, pos + length)
+            if raw.startswith(b"endstream", after):
+                data = candidate
+        if data is None:  # bogus /Length: recover by scanning for endstream
+            e = raw.find(b"endstream", pos)
+            if e == -1:
+                raise ValueError("pdf: unterminated stream")
+            data = raw[pos:e].rstrip(b"\r\n")
+        return _PdfStream(val, data)
+
+    def _load_objstm(self, stm_num: int) -> None:
+        """Parse an /ObjStm and cache every object the xref maps into it."""
+        if stm_num in self._objstm_loaded:
+            return
+        self._objstm_loaded.add(stm_num)
+        stm = self.obj(stm_num)
+        if not isinstance(stm, _PdfStream) or stm.sdict.get("Type") != "ObjStm":
+            return
+        try:
+            data = self.decode_stream(stm)
+        except ValueError:
+            return
+        n = stm.sdict.get("N")
+        first = stm.sdict.get("First")
+        if not (isinstance(n, int) and isinstance(first, int)
+                and 0 < n <= 100_000 and 0 <= first <= len(data)):
+            return
+        pairs = re.findall(rb"(\d+)\s+(\d+)", data[:first])[:n]
+        for objnum_b, off_b in pairs:
+            objnum = int(objnum_b)
+            ent = self.xref.get(objnum)
+            # Only honor objects the xref actually maps to THIS stream, so a
+            # stale ObjStm copy can't shadow a newer revision of the object.
+            if ent is None or ent[0] != 2 or ent[1] != stm_num:
+                continue
+            if objnum in self._cache:
+                continue
+            try:
+                val, _ = _pdf_parse_value(data, first + int(off_b))
+            except ValueError:
+                continue
+            self._cache[objnum] = val
+
+    def obj(self, num: int) -> Any:
+        if num in self._cache:
+            return self._cache[num]
+        ent = self.xref.get(num)
+        if ent is None:
+            return None
+        if num in self._loading:
+            raise ValueError("pdf: circular object reference")
+        self._loading.add(num)
+        try:
+            val: Any = None
+            if ent[0] == 1:
+                if 0 <= ent[1] < len(self.raw):
+                    try:
+                        val = self._parse_indirect_at(ent[1])
+                    except ValueError:
+                        val = None
+            else:  # type 2: lives inside an object stream
+                self._load_objstm(ent[1])
+                val = self._cache.get(num)
+        finally:
+            self._loading.discard(num)
+        self._cache[num] = val
+        return val
+
+    def deref(self, v: Any) -> Any:
+        hops = 0
+        while isinstance(v, _PdfRef):
+            hops += 1
+            if hops > 32:
+                raise ValueError("pdf: reference chain too long")
+            v = self.obj(v.num)
+        return v
+
+    # -- streams ------------------------------------------------------------
+
+    def decode_stream(self, stm: _PdfStream) -> bytes:
+        import zlib
+
+        filters = self.deref(stm.sdict.get("Filter", stm.sdict.get("F")))
+        parms = self.deref(stm.sdict.get("DecodeParms", stm.sdict.get("DP")))
+        flist: List[Any] = filters if isinstance(filters, list) else (
+            [] if filters is None else [filters])
+        plist: List[Any] = parms if isinstance(parms, list) else [parms] * len(flist)
+        data = stm.raw
+        for k, f in enumerate(flist):
+            f = self.deref(f)
+            p = self.deref(plist[k]) if k < len(plist) else None
+            if f in ("FlateDecode", "Fl"):
+                try:
+                    data = zlib.decompressobj().decompress(data, self.budget + 1)
+                except zlib.error as e:
+                    raise ValueError(f"pdf: bad flate stream ({e})")
+            elif f in ("ASCIIHexDecode", "AHx"):
+                hx = re.sub(rb"[^0-9A-Fa-f]", b"", data.split(b">")[0])
+                if len(hx) % 2:
+                    hx += b"0"
+                data = bytes.fromhex(hx.decode("ascii"))
+            elif f in ("ASCII85Decode", "A85"):
+                import base64
+                try:
+                    data = base64.a85decode(re.sub(rb"\s", b"", data.split(b"~>")[0]))
+                except ValueError as e:
+                    raise ValueError(f"pdf: bad ascii85 stream ({e})")
+            else:
+                raise ValueError(f"pdf: unsupported stream filter {f!r}")
+            if len(data) > self.budget:
+                raise ValueError("pdf: decompression budget exceeded")
+            self.budget -= len(data)
+            if isinstance(p, dict):
+                data = _pdf_unpredict(data, {k2: self.deref(v2) for k2, v2 in p.items()})
+        return data
+
+
+# -- text decoding ----------------------------------------------------------
+
+
+def _pdf_latin1(bs: bytes) -> str:
+    """Decoder for simple (non-CID) fonts: byte codes are close enough to
+    Latin-1 for extraction purposes."""
+    return bs.decode("latin-1", "replace")
+
+
+def _pdf_utf16be_hex(hx: str) -> str:
+    if len(hx) % 2:
+        hx += "0"
+    try:
+        return bytes.fromhex(hx).decode("utf-16-be", "ignore")
+    except ValueError:
+        return ""
+
+
+def _pdf_cmap_decoder(src: bytes) -> Optional[Callable[[bytes], str]]:
+    """Build a code->Unicode decoder from a /ToUnicode CMap stream. Returns
+    None when the CMap yields no usable mappings."""
+    text = src.decode("latin-1", "replace")
+    mapping: Dict[bytes, str] = {}
+    lens: Set[int] = set()
+    for m in re.finditer(r"begincodespacerange(.*?)endcodespacerange", text, re.S):
+        for hm in re.finditer(r"<([0-9A-Fa-f]{2,8})>", m.group(1)):
+            lens.add((len(hm.group(1)) + 1) // 2)
+    for m in re.finditer(r"beginbfchar(.*?)endbfchar", text, re.S):
+        for pm in re.finditer(r"<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]*)>", m.group(1)):
+            if len(mapping) >= _PDF_MAX_CMAP_ENTRIES:
+                break
+            src_hex = pm.group(1)
+            if len(src_hex) % 2:
+                src_hex = "0" + src_hex
+            code = bytes.fromhex(src_hex)
+            if code:
+                mapping[code] = _pdf_utf16be_hex(pm.group(2))
+                lens.add(len(code))
+    for m in re.finditer(r"beginbfrange(.*?)endbfrange", text, re.S):
+        toks = re.findall(r"<[0-9A-Fa-f]*>|\[[^\]]*\]", m.group(1))
+        j = 0
+        while j + 3 <= len(toks):
+            lo_t, hi_t, dst_t = toks[j], toks[j + 1], toks[j + 2]
+            j += 3
+            if lo_t.startswith("[") or hi_t.startswith("["):
+                continue
+            lo_h, hi_h = lo_t[1:-1], hi_t[1:-1]
+            if not lo_h or not hi_h:
+                continue
+            nbytes = (max(len(lo_h), len(hi_h)) + 1) // 2
+            lo, hi = int(lo_h, 16), int(hi_h, 16)
+            if hi < lo or hi - lo > 0xFFFF:
+                continue
+            lens.add(nbytes)
+            if dst_t.startswith("["):
+                dsts = re.findall(r"<([0-9A-Fa-f]*)>", dst_t)
+                for k, dh in enumerate(dsts):
+                    if lo + k > hi or len(mapping) >= _PDF_MAX_CMAP_ENTRIES:
+                        break
+                    mapping[(lo + k).to_bytes(nbytes, "big")] = _pdf_utf16be_hex(dh)
+            else:
+                dh = dst_t[1:-1]
+                if not dh:
+                    continue
+                width = len(dh) if len(dh) % 2 == 0 else len(dh) + 1
+                base = int(dh, 16)
+                for k in range(hi - lo + 1):
+                    if len(mapping) >= _PDF_MAX_CMAP_ENTRIES:
+                        break
+                    mapping[(lo + k).to_bytes(nbytes, "big")] = _pdf_utf16be_hex(
+                        format(base + k, f"0{width}X"))
+    if not any(mapping.values()):
+        return None
+    lens_sorted = sorted(lens) or [2]
+
+    def decode(bs: bytes) -> str:
+        out: List[str] = []
+        i = 0
+        n = len(bs)
+        while i < n:
+            for length in lens_sorted:
+                chunk = bs[i:i + length]
+                if chunk in mapping:
+                    out.append(mapping[chunk])
+                    i += length
+                    break
+            else:
+                i += lens_sorted[0]  # unmapped code: skip and resync
+        return "".join(out)
+
+    return decode
+
+
+def _pdf_font_decoder(doc: _PdfDoc, fref: Any) -> Optional[Callable[[bytes], str]]:
+    """Decoder for one font resource: its /ToUnicode CMap when present, plain
+    Latin-1 for simple fonts, and None for composite (Type0) fonts without a
+    CMap -- their bytes are opaque glyph indices, so emitting them as text
+    would produce garbage."""
+    key = fref.num if isinstance(fref, _PdfRef) else None
+    if key is not None and key in doc.font_cache:
+        return doc.font_cache[key]
+    dec: Optional[Callable[[bytes], str]] = _pdf_latin1
+    try:
+        font = doc.deref(fref)
+    except ValueError:
+        font = None
+    if isinstance(font, dict):
+        cm: Optional[Callable[[bytes], str]] = None
+        try:
+            tu = doc.deref(font.get("ToUnicode"))
+            if isinstance(tu, _PdfStream):
+                cm = _pdf_cmap_decoder(doc.decode_stream(tu))
+        except ValueError:
+            cm = None
+        if cm is not None:
+            dec = cm
+        elif font.get("Subtype") == "Type0":
+            dec = None
+    if key is not None:
+        doc.font_cache[key] = dec
+    return dec
+
+
+_PDF_OPERATOR_RE = re.compile(rb"[A-Za-z'\"][A-Za-z0-9'\"*]{0,7}|T\*")
+
+
+def _pdf_content_text(doc: _PdfDoc, content: bytes, resources: Any,
+                      depth: int, stats: Dict[str, int]) -> str:
+    """Interpret a content stream: track BT/ET and Tf font selection, decode
+    the shown strings (literal and hex, incl. TJ arrays) through the current
+    font's decoder, and recurse into Form XObjects drawn with Do."""
+    if depth > 8:
+        return ""
+    try:
+        res = doc.deref(resources)
+    except ValueError:
+        res = None
+    if not isinstance(res, dict):
+        res = {}
+    fonts: Dict[str, Optional[Callable[[bytes], str]]] = {}
+    try:
+        fdict = doc.deref(res.get("Font"))
+    except ValueError:
+        fdict = None
+    if isinstance(fdict, dict):
+        for fname, fref in list(fdict.items())[:256]:
+            fonts[fname] = _pdf_font_decoder(doc, fref)
+    try:
+        xobjects = doc.deref(res.get("XObject"))
+    except ValueError:
+        xobjects = None
+
+    lines: List[str] = []
+    cur: List[str] = []
+    operands: List[Any] = []
+    cur_dec: Optional[Callable[[bytes], str]] = _pdf_latin1
+    in_text = False
+    i = 0
+    n = len(content)
+
+    def flush() -> None:
+        if cur:
+            lines.append("".join(cur))
+            cur.clear()
+
+    def show(val: Any) -> None:
+        if not isinstance(val, bytes) or not in_text:
+            return
+        if cur_dec is None:
+            stats["undecodable"] += 1
+            return
+        # Append even when empty: a `() Tj` blank line must survive as a line
+        # break -- the all-caps clause tier keys off blank-line separation.
+        cur.append(cur_dec(val))
+
+    while i < n:
+        c = content[i]
+        if c in _PDF_WS:
+            i += 1
+            continue
+        if c == 0x25:  # comment
+            nl = content.find(b"\n", i)
+            i = n if nl == -1 else nl + 1
+            continue
+        try:
+            if c == 0x28:  # ( literal string
+                s, i = _pdf_parse_literal_string(content, i)
+                operands.append(s)
+                continue
+            if content.startswith(b"<<", i) or c == 0x5B:  # dict or array
+                v, i = _pdf_parse_value(content, i)
+                operands.append(v)
+                continue
+            if c == 0x3C:  # hex string
+                s, i = _pdf_parse_hex_string(content, i)
+                operands.append(s)
+                continue
+        except ValueError:
+            break  # malformed operand: stop scanning this stream
+        if c == 0x2F:  # name
+            nm, i = _pdf_parse_name(content, i)
+            operands.append(_PdfName(nm))
+            continue
+        if c in b"+-.0123456789":
+            m = _PDF_NUMBER_RE.match(content, i)
+            if m:
+                i = m.end()
+                operands.append(0)  # positions don't matter for extraction
+            else:
+                i += 1
+            continue
+        if c in _PDF_DELIMS:  # stray delimiter
+            i += 1
+            continue
+        m = _PDF_OPERATOR_RE.match(content, i)
+        if not m:
+            i += 1
+            continue
+        op = m.group(0)
+        i = m.end()
+        if op == b"BT":
+            flush()
+            in_text = True
+        elif op == b"ET":
+            flush()
+            in_text = False
+        elif op == b"Tf":
+            for v in reversed(operands):
+                if isinstance(v, _PdfName):
+                    cur_dec = fonts.get(v.value, _pdf_latin1)
+                    break
+        elif op in (b"Tj", b"'", b'"'):
+            stats["text_ops"] += 1
+            if op != b"Tj":
+                flush()
+            if operands:
+                show(operands[-1])
+        elif op == b"TJ":
+            stats["text_ops"] += 1
+            if operands and isinstance(operands[-1], list):
+                for el in operands[-1]:
+                    show(el)
+        elif op in (b"Td", b"TD", b"T*"):
+            flush()
+        elif op == b"BI":  # inline image: skip its binary payload
+            j = content.find(b"EI", i)
+            while j > 0 and content[j - 1] not in _PDF_WS:
+                j = content.find(b"EI", j + 2)
+            i = n if j == -1 else j + 2
+        elif op == b"Do" and depth < 8:
+            name = next((v.value for v in reversed(operands)
+                         if isinstance(v, _PdfName)), None)
+            if name is not None and isinstance(xobjects, dict) \
+                    and stats["forms"] < _PDF_MAX_FORM_XOBJECTS:
+                try:
+                    xo = doc.deref(xobjects.get(name))
+                except ValueError:
+                    xo = None
+                if isinstance(xo, _PdfStream) and xo.sdict.get("Subtype") == "Form":
+                    stats["forms"] += 1
+                    try:
+                        inner = doc.decode_stream(xo)
+                    except ValueError:
+                        inner = b""
+                    if inner:
+                        flush()
+                        sub = _pdf_content_text(
+                            doc, inner, xo.sdict.get("Resources", resources),
+                            depth + 1, stats)
+                        if sub.strip():
+                            lines.append(sub)
+        operands.clear()
+    flush()
+    return "\n".join(lines)
+
+
+def _pdf_page_nodes(doc: _PdfDoc) -> List[Tuple[Dict[str, Any], Any]]:
+    """Walk the page tree. Returns [(page_dict, effective_resources), ...],
+    honoring /Resources inheritance from parent /Pages nodes."""
+    root = doc.deref(doc.trailer.get("Root"))
+    if not isinstance(root, dict):
+        raise ValueError("pdf: no document catalog")
+    pages: List[Tuple[Dict[str, Any], Any]] = []
+    seen: Set[int] = set()
+
+    def walk(ref: Any, inherited_res: Any, depth: int) -> None:
+        if depth > 32 or len(pages) >= _PDF_MAX_PAGES:
+            return
+        if isinstance(ref, _PdfRef):
+            if ref.num in seen:
+                return
+            seen.add(ref.num)
+        node = doc.deref(ref)
+        if not isinstance(node, dict):
+            return
+        res = node.get("Resources", inherited_res)
+        kids = doc.deref(node.get("Kids"))
+        if isinstance(kids, list) and node.get("Type") != "Page":
+            for kid in kids[:_PDF_MAX_PAGES]:
+                walk(kid, res, depth + 1)
+        else:
+            pages.append((node, res))
+
+    walk(root.get("Pages"), None, 0)
+    return pages
+
+
+def _pdf_page_content(doc: _PdfDoc, node: Dict[str, Any]) -> bytes:
+    contents = doc.deref(node.get("Contents"))
+    items = contents if isinstance(contents, list) else [contents]
+    parts: List[bytes] = []
+    for it in items[:512]:
+        try:
+            s = doc.deref(it)
+            if isinstance(s, _PdfStream):
+                parts.append(doc.decode_stream(s))
+        except ValueError:
+            continue
+    return b"\n".join(parts)
+
+
+def _pdf_has_page_images(doc: _PdfDoc, resources: Any) -> bool:
+    try:
+        res = doc.deref(resources)
+        if not isinstance(res, dict):
+            return False
+        xobjects = doc.deref(res.get("XObject"))
+        if not isinstance(xobjects, dict):
+            return False
+        for v in list(xobjects.values())[:64]:
+            vv = doc.deref(v)
+            if isinstance(vv, _PdfStream) and vv.sdict.get("Subtype") == "Image":
+                return True
+    except ValueError:
+        return False
+    return False
+
+
+def _pdf_structured_text(raw: bytes) -> Tuple[str, str]:
+    """Full structured extraction. Returns (text, diagnosis); diagnosis is ""
+    on success, else one of the _PDF_EMPTY_NOTES keys explaining WHY the text
+    came back empty (so the CLI never blames the document for a reader gap)."""
+    doc = _PdfDoc(raw)
+    if doc.trailer.get("Encrypt") is not None:
+        return "", "encrypted"
+    pages = _pdf_page_nodes(doc)
+    if not pages:
+        return "", "structure"
+    stats: Dict[str, int] = {"text_ops": 0, "undecodable": 0, "forms": 0}
+    saw_images = False
+    page_texts: List[str] = []
+    for node, res in pages:
+        content = _pdf_page_content(doc, node)
+        saw_images = saw_images or _pdf_has_page_images(doc, res)
+        if not content:
+            continue
+        piece = _pdf_content_text(doc, content, res, 0, stats)
+        if piece.strip() and _mostly_printable(piece):
+            page_texts.append(piece)
+    text = "\n\n".join(page_texts)
+    if text.strip():
+        return text, ""
+    if stats["text_ops"]:
+        return "", "encoding"
+    if saw_images:
+        return "", "image-only"
+    return "", "no-text"
+
+
+# What to tell a human when the PDF yielded no text. Only the "image-only"
+# case blames the document; the others own up to a reader limitation. All
+# start with "no extractable text" so load_source() won't stack its generic
+# scanned-or-image-only guess on top.
+_PDF_EMPTY_NOTES = {
+    "image-only": "no extractable text from pdf input: pages contain images but "
+                  "no text operators, so the document appears scanned or "
+                  "image-only (OCR it first); output will be sparse",
+    "encoding": "no extractable text from pdf input: a text layer is present "
+                "but its font encoding could not be decoded by the stdlib "
+                "reader; install the [pdf] extra (pip install "
+                "'extract-cli[pdf]') for full-fidelity extraction; output "
+                "will be sparse",
+    "encrypted": "no extractable text from pdf input: the file is encrypted; "
+                 "decrypt it first; output will be sparse",
+    "structure": "no extractable text from pdf input: could not decode the "
+                 "PDF structure with the stdlib reader (unsupported or "
+                 "damaged file?); install the [pdf] extra (pip install "
+                 "'extract-cli[pdf]') for full-fidelity extraction; output "
+                 "will be sparse",
+    "no-text": "no extractable text from pdf input: the document contains no "
+               "text content; output will be sparse",
+}
+
+
+def _read_pdf_stdlib(raw: bytes) -> Tuple[str, str]:
+    """Stdlib PDF text extraction: the structured parser first (it handles
+    modern xref/object-stream files and ToUnicode-encoded text), then the
+    legacy stream-scan heuristic as a net for undecodable structures. Returns
+    (text, note); `note` is a specific empty-output diagnosis, "" otherwise."""
+    text = ""
+    diag = "structure"
+    try:
+        text, diag = _pdf_structured_text(raw)
+    except Exception:
+        text, diag = "", "structure"
+    if not text.strip():
+        scanned = _pdf_scan_text(raw)
+        if scanned.strip():
+            return scanned, ""
+    if text.strip():
+        return text, ""
+    return "", _PDF_EMPTY_NOTES.get(diag, _PDF_EMPTY_NOTES["structure"])
 
 
 def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, str, List[str]]:
@@ -1570,7 +2508,9 @@ def load_source(path: Path, prefer_optional: bool = True) -> Tuple[bytes, str, s
         warnings += w
     else:  # pragma: no cover - unreachable; _detect_format only returns the above
         text = raw.decode("utf-8", "replace")
-    if not text.strip():
+    if not text.strip() and not any(w.startswith("no extractable text") for w in warnings):
+        # The pdf reader emits its own, more precise empty-output diagnosis;
+        # this generic guess covers the remaining formats.
         warnings.append(
             f"no extractable text from {fmt} input (scanned or image-only?); "
             "output will be sparse"

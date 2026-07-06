@@ -21,7 +21,8 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 DOCS = ["nda_h2.md", "services_bold.txt", "lease_allcaps.txt",
         "employment_docx.docx", "heading_docx.docx", "numbered_docx.docx",
-        "license_pdf.pdf", "services_html.html", "scanned.pdf"]
+        "license_pdf.pdf", "esigned_pdf.pdf", "services_html.html",
+        "scanned.pdf"]
 
 
 def golden_for(name: str) -> dict:

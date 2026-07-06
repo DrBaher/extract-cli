@@ -192,6 +192,11 @@ def _assemble_pdf(content: bytes) -> bytes:
         b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream",
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
     ]
+    return _assemble_pdf_objects(objects)
+
+
+def _assemble_pdf_objects(objects: "list[bytes]") -> bytes:
+    """Classic PDF 1.4 assembly: sequential objects + a plain xref table."""
     out = b"%PDF-1.4\n"
     offsets = []
     for i, obj in enumerate(objects, start=1):
@@ -218,10 +223,157 @@ def build_pdf() -> bytes:
 
 
 def build_scanned_pdf() -> bytes:
-    """A PDF whose only content stream draws a rectangle -- no text operators,
-    mimicking a scanned/image-only page. Exercises graceful degradation."""
-    content = b"0 0 612 792 re\nf\n"
-    return _assemble_pdf(content)
+    """A PDF whose only content draws a full-page image -- no text operators,
+    mimicking a scanned/image-only page. Exercises graceful degradation and
+    the reader's scanned-or-image-only diagnosis."""
+    import zlib
+    pixels = zlib.compress(b"\xff" * (8 * 8))  # 8x8 white gray image
+    content = b"q 612 0 0 792 0 0 cm /Im1 Do Q\n"
+    objects = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+        b"/Contents 4 0 R /Resources << /XObject << /Im1 5 0 R >> >> >>",
+        b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream",
+        b"<< /Type /XObject /Subtype /Image /Width 8 /Height 8 "
+        b"/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode "
+        b"/Length " + str(len(pixels)).encode() + b" >>\nstream\n" + pixels + b"\nendstream",
+    ]
+    return _assemble_pdf_objects(objects)
+
+
+# --- PDF 1.5 "modern" fixture: xref stream + object streams + CID text ------
+# The shape e-signature platforms (SignWell/HexaPDF, DocuSign) and Word emit:
+# the cross-reference is a compressed /XRef stream (PNG-Up predicted), the
+# catalog/page/font objects live inside a compressed /ObjStm, and text is
+# shown as 2-byte CID glyph codes in hex strings that only the font's
+# /ToUnicode CMap maps back to Unicode. pdftotext reads these fine; a reader
+# that only understands classic xref tables and literal strings sees nothing.
+
+_MODERN_PDF_TEXT = """MASTER SERVICES AGREEMENT
+
+This Master Services Agreement is entered into as of May 5, 2025, by and
+between Medicus GmbH ("Provider") and Partner AG ("Customer").
+
+CONFIDENTIALITY
+
+Each party shall keep the other party's Confidential Information in strict
+confidence during and after the term of this Agreement.
+
+TERM AND TERMINATION
+
+This Agreement shall remain in effect for a period of three (3) years. This
+Agreement shall not automatically renew. Either party may terminate upon
+sixty (60) days' written notice.
+
+GOVERNING LAW
+
+This Agreement shall be governed by the laws of Austria.
+
+IN WITNESS WHEREOF the Parties have caused their duly authorised
+representatives to execute this Agreement.
+"""
+
+
+def build_modern_pdf() -> bytes:
+    import struct
+    import zlib
+
+    # Deterministic subset-font-like encoding: glyph code = position in the
+    # sorted charset (never equal to the codepoint, so extraction MUST go
+    # through the ToUnicode CMap to produce readable text).
+    charset = sorted({ch for ch in _MODERN_PDF_TEXT if ch != "\n"})
+    code_of = {ch: i + 1 for i, ch in enumerate(charset)}
+
+    bfchars = "".join(f"<{code_of[ch]:04X}> <{ord(ch):04X}>\n" for ch in charset)
+    cmap = (
+        "/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n"
+        "1 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n"
+        f"{len(charset)} beginbfchar\n{bfchars}endbfchar\n"
+        "endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n"
+    ).encode("latin-1")
+    cmap_z = zlib.compress(cmap)
+
+    parts = ["BT", "/F1 11 Tf", "14 TL", "72 760 Td"]
+    for line in _MODERN_PDF_TEXT.split("\n"):
+        hexstr = "".join(f"{code_of[ch]:04X}" for ch in line)
+        parts.append(f"<{hexstr}> Tj")
+        parts.append("T*")
+    parts.append("ET")
+    content_z = zlib.compress("\n".join(parts).encode("latin-1"))
+
+    # Non-stream objects -- packed into the ObjStm (streams can't live there).
+    in_objstm = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+            b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>"),
+        5: (b"<< /Type /Font /Subtype /Type0 /BaseFont /AAAAAA+FakeSubset "
+            b"/Encoding /Identity-H /DescendantFonts [6 0 R] /ToUnicode 8 0 R >>"),
+        6: (b"<< /Type /Font /Subtype /CIDFontType2 /BaseFont /AAAAAA+FakeSubset "
+            b"/CIDSystemInfo 7 0 R >>"),
+        7: b"<< /Registry (Adobe) /Ordering (Identity) /Supplement 0 >>",
+    }
+    file_objects = {
+        4: (f"<< /Length {len(content_z)} /Filter /FlateDecode >>".encode()
+            + b"\nstream\n" + content_z + b"\nendstream"),
+        8: (f"<< /Length {len(cmap_z)} /Filter /FlateDecode >>".encode()
+            + b"\nstream\n" + cmap_z + b"\nendstream"),
+    }
+
+    # ObjStm: "num offset ..." header, then the serialized objects.
+    nums = sorted(in_objstm)
+    objstm_num = 9
+    xref_num = 10
+    header = []
+    body = b""
+    for num in nums:
+        header.append(f"{num} {len(body)}".encode())
+        body += in_objstm[num] + b"\n"
+    header_bytes = b" ".join(header) + b"\n"
+    objstm_z = zlib.compress(header_bytes + body)
+    objstm_obj = (
+        f"<< /Type /ObjStm /N {len(nums)} /First {len(header_bytes)} "
+        f"/Filter /FlateDecode /Length {len(objstm_z)} >>".encode()
+        + b"\nstream\n" + objstm_z + b"\nendstream")
+
+    out = b"%PDF-1.5\n%\xc2\xa5\xc2\xb1\xc3\xab\n"
+    offsets = {}
+    for num in sorted(file_objects):
+        offsets[num] = len(out)
+        out += f"{num} 0 obj\n".encode() + file_objects[num] + b"\nendobj\n"
+    offsets[objstm_num] = len(out)
+    out += f"{objstm_num} 0 obj\n".encode() + objstm_obj + b"\nendobj\n"
+    xref_pos = len(out)
+
+    # XRef stream: W [1 4 2], PNG-Up predicted (Predictor 12), like real files.
+    size = xref_num + 1
+    rows = []
+    for num in range(size):
+        if num == 0:
+            rows.append(struct.pack(">B I H", 0, 0, 0xFFFF))
+        elif num in in_objstm:
+            rows.append(struct.pack(">B I H", 2, objstm_num, nums.index(num)))
+        elif num in offsets:
+            rows.append(struct.pack(">B I H", 1, offsets[num], 0))
+        else:  # the xref stream itself
+            rows.append(struct.pack(">B I H", 1, xref_pos, 0))
+    rowlen = 7
+    predicted = b""
+    prev = bytes(rowlen)
+    for row in rows:
+        predicted += b"\x02" + bytes((row[i] - prev[i]) & 0xFF for i in range(rowlen))
+        prev = row
+    xref_z = zlib.compress(predicted)
+    xref_dict = (
+        f"<< /Type /XRef /Size {size} /W [1 4 2] /Root 1 0 R "
+        f"/Filter /FlateDecode "
+        f"/DecodeParms << /Predictor 12 /Columns {rowlen} >> "
+        f"/Length {len(xref_z)} >>".encode())
+    out += (f"{xref_num} 0 obj\n".encode() + xref_dict
+            + b"\nstream\n" + xref_z + b"\nendstream\nendobj\n")
+    out += f"startxref\n{xref_pos}\n%%EOF\n".encode()
+    return out
 
 
 _BINARY_FIXTURES = {
@@ -230,6 +382,7 @@ _BINARY_FIXTURES = {
     "numbered_docx.docx": build_numbered_docx,
     "license_pdf.pdf": build_pdf,
     "scanned.pdf": build_scanned_pdf,
+    "esigned_pdf.pdf": build_modern_pdf,
 }
 
 

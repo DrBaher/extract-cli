@@ -2,7 +2,7 @@
   "document": {
     "title": "Scanned",
     "format": "pdf",
-    "sha256": "a3743388a63b7cba33cba26b7b3cd56b8ffbe0a208349b7d68110f39511a3ea9",
+    "sha256": "0d7fb785ced170271c23e795f9fc5ffee0e2c8a322b85c8219a7ec1b7137b55f",
     "source_path": "scanned.pdf"
   },
   "parties": [],
@@ -55,7 +55,7 @@
   "amounts": [],
   "signatories": [],
   "_meta": {
-    "extractor_version": "0.1.14",
+    "extractor_version": "0.1.18",
     "tiers_used": [
       "deterministic"
     ],

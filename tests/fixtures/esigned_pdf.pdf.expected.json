@@ -1,27 +1,27 @@
 {
   "document": {
-    "title": "COMMERCIAL LEASE AGREEMENT",
-    "format": "text",
-    "sha256": "759586b42a87c28c0a7df1f6bf6000b1eb068788be0b021d660fdf04f46c1caa",
-    "source_path": "lease_allcaps.txt"
+    "title": "MASTER SERVICES AGREEMENT",
+    "format": "pdf",
+    "sha256": "7112e5ce82ff90c9cda65a891ca68037e5c957c59b95c9bbf6309bb8255e962c",
+    "source_path": "esigned_pdf.pdf"
   },
   "parties": [
     {
-      "name": "Wayne Enterprises",
+      "name": "Medicus GmbH",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Landlord"
+      "role": "Provider"
     },
     {
-      "name": "Stark Industries",
+      "name": "Partner AG",
       "confidence": 0.9,
       "source": "deterministic",
-      "role": "Tenant"
+      "role": "Customer"
     }
   ],
   "dates": {
     "effective": {
-      "value": "2023-06-01",
+      "value": "2025-05-05",
       "confidence": 0.85,
       "source": "deterministic"
     },
@@ -33,7 +33,7 @@
   },
   "term": {
     "length": {
-      "value": "5 years",
+      "value": "3 years",
       "confidence": 0.7,
       "source": "deterministic"
     },
@@ -49,59 +49,35 @@
     }
   },
   "governing_law": {
-    "value": "State of Illinois",
+    "value": "Austria",
     "confidence": 0.85,
     "source": "deterministic"
   },
   "jurisdiction": {
-    "value": "US-IL",
-    "confidence": 0.8,
-    "source": "deterministic"
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
   },
   "clauses": [
     {
-      "canonical_title": "Premises",
-      "detected_title": "PREMISES",
+      "canonical_title": "Confidentiality",
+      "detected_title": "CONFIDENTIALITY",
       "tier": "all-caps",
       "span": {
-        "start": 176,
-        "end": 253
-      },
-      "confidence": 0.56,
-      "source": "deterministic",
-      "mapped": false
-    },
-    {
-      "canonical_title": "Term",
-      "detected_title": "TERM",
-      "tier": "all-caps",
-      "span": {
-        "start": 255,
-        "end": 377
+        "start": 164,
+        "end": 311
       },
       "confidence": 0.75,
       "source": "deterministic",
       "mapped": true
     },
     {
-      "canonical_title": "Rent",
-      "detected_title": "RENT",
+      "canonical_title": "Termination",
+      "detected_title": "TERM AND TERMINATION",
       "tier": "all-caps",
       "span": {
-        "start": 379,
-        "end": 464
-      },
-      "confidence": 0.56,
-      "source": "deterministic",
-      "mapped": false
-    },
-    {
-      "canonical_title": "Notices",
-      "detected_title": "NOTICES",
-      "tier": "all-caps",
-      "span": {
-        "start": 466,
-        "end": 555
+        "start": 313,
+        "end": 516
       },
       "confidence": 0.75,
       "source": "deterministic",
@@ -112,8 +88,8 @@
       "detected_title": "GOVERNING LAW",
       "tier": "all-caps",
       "span": {
-        "start": 557,
-        "end": 639
+        "start": 518,
+        "end": 699
       },
       "confidence": 0.75,
       "source": "deterministic",
@@ -122,28 +98,22 @@
   ],
   "defined_terms": [
     {
-      "term": "Landlord",
+      "term": "Provider",
       "confidence": 0.6,
       "source": "deterministic"
     },
     {
-      "term": "Tenant",
+      "term": "Customer",
       "confidence": 0.6,
       "source": "deterministic"
     }
   ],
   "value": {
-    "value": "$120,000",
-    "confidence": 0.6,
-    "source": "deterministic"
+    "value": null,
+    "confidence": 0.0,
+    "source": "none"
   },
-  "amounts": [
-    {
-      "value": "$120,000",
-      "confidence": 0.6,
-      "source": "deterministic"
-    }
-  ],
+  "amounts": [],
   "signatories": [],
   "_meta": {
     "extractor_version": "0.1.18",

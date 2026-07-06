@@ -75,8 +75,18 @@ The playbook gates heavy parsing behind `[docx]`/`[pdf]`. We honor the spirit
 via stdlib readers, because the hard rule is "fully functional with zero
 extras + degrade gracefully" — and a best-effort reader serves that better than
 refusing the format. See the decision note in
-[CHANGELOG.md](CHANGELOG.md). A scanned/image-only PDF yields no text → a
-stderr warning and exit code `1` (a "finding"), never a crash.
+[CHANGELOG.md](CHANGELOG.md).
+
+The stdlib PDF reader parses the real object graph (`_pdf_structured_text`):
+the xref chain (classic tables, PDF 1.5+ cross-reference streams with PNG
+predictors, hybrid `/XRefStm`), objects packed in compressed `/ObjStm` object
+streams, the page tree, and per-font `/ToUnicode` CMaps — so text stored as
+CID glyph codes in hex strings (Word, HexaPDF/SignWell, DocuSign, qpdf output)
+decodes correctly. A legacy inflate-every-stream scanner remains as the
+fallback for undecodable structures. When no text comes out, the reader says
+*why* on stderr — genuinely scanned/image-only (no text operators + page
+images), undecodable font encoding, encrypted, or unparseable structure — and
+the run exits `1` (a "finding"), never a crash.
 
 ## LLM tier
 

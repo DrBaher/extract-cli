@@ -6,6 +6,30 @@ to [Semantic Versioning](https://semver.org/). Per the suite convention
 (see [`docs/INTEROP.md`](docs/INTEROP.md)), **backward-incompatible changes to
 the output schema require a major version bump**; new optional fields are minor.
 
+## [0.1.18] - 2026-07-06
+
+### Fixed
+- **PDFs with cross-reference/object streams no longer misreport as
+  "scanned/image-only".** The stdlib PDF reader now parses the real object
+  graph: PDF 1.5+ cross-reference streams (incl. PNG predictors and hybrid
+  `/XRefStm`), objects packed in compressed `/ObjStm` object streams, the page
+  tree with resource inheritance, hex strings, Form XObjects, and — the actual
+  text-loss culprit — `/ToUnicode` CMap decoding for CID-encoded text. This is
+  the default output shape of Word, HexaPDF/SignWell, DocuSign, Ghostscript,
+  qpdf and Acrobat's optimizer, i.e. precisely the e-signed contracts
+  `contract-vault ingest` registers; they previously extracted as empty. The
+  legacy inflate-every-stream scanner remains as a fallback.
+- **Empty-PDF diagnostics no longer blame the document for reader gaps.**
+  "scanned or image-only" is now claimed only when pages truly have no text
+  operators and do have images; otherwise the warning states the real cause
+  (undecodable font encoding, encrypted file, undecodable structure, or no
+  text content) and points at the `[pdf]` extra.
+
+### Added
+- `esigned_pdf.pdf` corpus fixture: a PDF 1.5 file with a compressed xref
+  stream, an object stream, and CID/ToUnicode-encoded text, generated
+  deterministically by the stdlib fixture builder.
+
 ## [0.1.17] - 2026-06-04
 
 ### Fixed

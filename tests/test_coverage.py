@@ -97,14 +97,17 @@ def test_detect_format_by_magic_bytes(tmp_path: Any) -> None:
 
 
 def test_pdf_stream_without_endstream() -> None:
-    assert ex._read_pdf_stdlib(b"%PDF\nstream\n(text) Tj") == ""
+    text, note = ex._read_pdf_stdlib(b"%PDF\nstream\n(text) Tj")
+    assert text == ""
+    assert "could not decode the PDF structure" in note
 
 
 def test_pdf_decompression_budget_break(monkeypatch: pytest.MonkeyPatch) -> None:
     import zlib
     monkeypatch.setattr(ex, "MAX_DECOMPRESSED_BYTES", 10)
     blob = b"%PDF\nstream\n" + zlib.compress(b"(Hello World) Tj " * 10) + b"\nendstream"
-    assert ex._read_pdf_stdlib(blob) == ""  # exceeds the tiny budget -> bail, no text
+    text, _ = ex._read_pdf_stdlib(blob)
+    assert text == ""  # exceeds the tiny budget -> bail, no text
 
 
 def test_html_malformed_falls_back(monkeypatch: pytest.MonkeyPatch) -> None:
